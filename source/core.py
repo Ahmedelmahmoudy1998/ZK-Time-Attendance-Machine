@@ -1,9 +1,10 @@
 import sqlite3, hashlib, secrets, hmac, json, csv
 from datetime import datetime, date, time, timedelta
+from company_profile import CompanyProfileStore
 
 ROLES = ('admin', 'manager', 'reports')
 
-class Store:
+class Store(CompanyProfileStore):
     def __init__(self, path):
         self.path = str(path)
         self.db = sqlite3.connect(path, timeout=15)
@@ -17,6 +18,7 @@ class Store:
         CREATE TABLE IF NOT EXISTS shifts(id INTEGER PRIMARY KEY, name TEXT UNIQUE NOT NULL, start TEXT NOT NULL, end TEXT NOT NULL, grace INTEGER NOT NULL DEFAULT 0, break_mins INTEGER NOT NULL DEFAULT 0, days TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS assignments(id INTEGER PRIMARY KEY, badge TEXT NOT NULL REFERENCES employees(badge), shift_id INTEGER NOT NULL REFERENCES shifts(id), begin TEXT NOT NULL, finish TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY, stamp TEXT NOT NULL, actor TEXT NOT NULL, action TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS company_profile(id INTEGER PRIMARY KEY CHECK(id=1), company_name TEXT NOT NULL, branch TEXT NOT NULL, logo BLOB NOT NULL);
         ''')
         self.actor = None
         try:self._migrate_punches()
@@ -262,9 +264,14 @@ def monthly(rows):
         for field in ('worked_minutes','late_minutes','early_minutes'): t[field]+=r[field]
     return list(out.values())
 
-def export_csv(path,rows):
+def export_csv(path,rows,company=None):
     if not rows: raise ValueError('No rows to export.')
     def safe(v):
         return "'"+v if isinstance(v,str) and v.lstrip().startswith(('=','+','-','@','\t','\r')) else v
     with open(path,'w',encoding='utf-8-sig',newline='') as f:
+        if company and (company.get('company_name') or company.get('branch')):
+            metadata=csv.writer(f)
+            metadata.writerow(['Company name',safe(company.get('company_name',''))])
+            metadata.writerow(['Branch',safe(company.get('branch',''))])
+            metadata.writerow([])
         w=csv.DictWriter(f,fieldnames=list(rows[0])); w.writeheader(); w.writerows({k:safe(v) for k,v in r.items()} for r in rows)

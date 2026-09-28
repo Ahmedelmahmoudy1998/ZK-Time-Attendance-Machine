@@ -7,6 +7,7 @@ from core import Store, monthly, export_csv
 from connectors import read_mdb, download
 from settings import migrate_settings
 from branding import brand_asset
+from company_profile import normalize_logo, MAX_LOGO_BYTES
 from report_exports import asset, PRODUCER, COPYRIGHT, export_pdf, export_excel, export_print_html
 from datepicker import DateRange, preset_range
 
@@ -17,6 +18,8 @@ AR.update({'New':'جديد','Pending':'لم تبدأ الوردية','In progres
 AR.update({'From':'من','To':'إلى','Calendar':'التقويم','If the device has a COMM Key set under Comm. > Security, enter that number when downloading.':'إذا كان الجهاز مضبوطاً عليه COMM Key من Comm. > Security أدخل نفس الرقم عند التنزيل.','Report type':'نوع التقرير','Summary':'الملخص','Attendance today':'حضور اليوم','Total':'الإجمالي','Rows':'عدد الصفوف','Days present':'أيام الحضور','Worked hours':'ساعات العمل','Late minutes':'دقائق التأخير','Early leave minutes':'دقائق الخروج المبكر','Late days':'أيام التأخير','Absent days':'أيام الغياب','Missing punch days':'أيام البصمة الناقصة','No attendance records for today.':'لا توجد سجلات حضور لليوم.','Import a ZKTime database or download from a device to see today here.':'استورد قاعدة ZKTime أو نزّل من الجهاز ليظهر حضور اليوم هنا.','Remove device':'حذف الجهاز','Remove this device from the list?':'حذف هذا الجهاز من القائمة؟','Attendance records already downloaded from it are kept.':'سجلات الحضور التي نزلت منه تبقى كما هي.','Device removed':'تم حذف الجهاز','That device no longer exists. Refresh the list.':'هذا الجهاز لم يعد موجوداً. حدّث القائمة.','Start date':'تاريخ البداية','End date':'تاريخ النهاية','Choose date':'اختر التاريخ','The end date is before the start date.':'تاريخ النهاية قبل تاريخ البداية.','No daily rows for this period. The punches exist but their badges are not in the employee list. Use Show raw punches, or import the employees.':'لا توجد صفوف يومية في هذه الفترة. البصمات موجودة لكن أرقامها غير مسجلة في قائمة الموظفين. استخدم عرض البصمات الخام أو استورد الموظفين.','Today':'اليوم','Yesterday':'أمس','This week':'هذا الأسبوع','This month':'هذا الشهر','Last month':'الشهر الماضي','Full range':'كل الفترة','Print PDF':'طباعة PDF','Show raw punches':'عرض البصمات الخام','Show daily summary':'عرض الملخص اليومي','in':'الدخول','out':'الخروج','worked':'ساعات العمل','weekday':'اليوم','note':'ملاحظة','Missing out punch':'بصمة انصراف ناقصة','Odd punch count':'عدد بصمات فردي','Worked is last punch minus first punch. Breaks are not deducted.':'ساعات العمل = آخر بصمة ناقص أول بصمة، دون خصم الاستراحة.','The From date must not be after the To date.':'تاريخ البداية يجب ألا يتجاوز تاريخ النهاية.','No attendance records for this period.':'لا توجد سجلات حضور في هذه الفترة.','No punches in the database yet. Import a ZKTime database or download from a device first.':'لا توجد بصمات بعد. استورد قاعدة ZKTime أو نزّل البيانات من الجهاز أولاً.','Results were trimmed. Narrow the period or choose one employee.':'تم اختصار النتائج. اختر فترة أقصر أو موظفاً واحداً.','Mon':'اثنين','Tue':'ثلاثاء','Wed':'أربعاء','Thu':'خميس','Fri':'جمعة','Sat':'سبت','Sun':'أحد','January':'يناير','February':'فبراير','March':'مارس','April':'أبريل','May':'مايو','June':'يونيو','July':'يوليو','August':'أغسطس','September':'سبتمبر','October':'أكتوبر','November':'نوفمبر','December':'ديسمبر'})
 
 AR.update({'Employee':'الموظف','All employees':'كل الموظفين','Export PDF':'تصدير PDF','Export Excel':'تصدير Excel','Print preview':'معاينة الطباعة','Database selection is remembered automatically.':'يتم حفظ اختيار قاعدة البيانات تلقائياً.','Select a saved database or restore its location.':'اختر قاعدة بيانات محفوظة أو أعدها إلى موقعها.'})
+
+AR.update({'Company details':'بيانات الشركة','Company name':'اسم الشركة','Branch':'الفرع','Company logo':'شعار الشركة','Choose logo':'اختيار الشعار','Remove logo':'إزالة الشعار','No company logo':'لم يُحدد شعار للشركة','Company details saved.':'تم حفظ بيانات الشركة.','Saved in the selected database and included in reports.':'تُحفظ في قاعدة البيانات المختارة وتظهر في التقارير.','Choose a PNG or JPEG logo no larger than 5 MB.':'اختر شعار PNG أو JPEG بحجم لا يتجاوز 5 ميجابايت.','Choose a valid PNG or JPEG logo (up to 16 million pixels).':'اختر صورة PNG أو JPEG صالحة لا تتجاوز 16 مليون بكسل.','Company and branch must each be one line of up to 160 characters.':'اسم الشركة والفرع: سطر واحد لكل منهما لا يتجاوز 160 حرفاً.'})
 
 class App(tk.Tk):
     def __init__(self):
@@ -113,6 +116,7 @@ class App(tk.Tk):
             self.logo=tk.PhotoImage(file=str(asset('ods-logo.png')));ttk.Label(frame,image=self.logo).pack(pady=2)
         ttk.Label(frame,text='Oasis Attend',style='Title.TLabel').pack(pady=2)
         ttk.Label(frame,text='Attendance & workforce  |  الحضور وإدارة الموظفين').pack(pady=2)
+        self.company_header(frame)
         language_bar=ttk.Frame(frame);language_bar.pack();self.button(language_bar,'العربية / English',self.toggle_language)
         initial=not self.store.rows('SELECT username FROM accounts')
         ttk.Label(frame,text=self.tr('Create administrator' if initial else 'Login')).pack(pady=2)
@@ -175,6 +179,7 @@ class App(tk.Tk):
         ttk.Label(bar,text='Oasis Attend',style='Title.TLabel').pack(side='left',padx=15)
         ttk.Label(bar,text=f"{self.store.actor['username']} · {self.store.actor['role']}").pack(side='left',padx=18)
         self.button(bar,'العربية / English',self.toggle_language); self.button(bar,'Logout',self.logout)
+        self.company_header(self)
         self.status=tk.StringVar(value=self.tr('Working…' if self.busy else 'Ready')); ttk.Label(self,textvariable=self.status,padding=8).pack(side='bottom',fill='x')
         self.notebook=ttk.Notebook(self); self.notebook.pack(fill='both',expand=True,padx=18,pady=8)
         role=self.store.actor['role']; sections=['Dashboard','Reports']
@@ -275,11 +280,64 @@ class App(tk.Tk):
         ttk.Separator(legend).pack(fill='x',pady=6)
         ttk.Label(legend,text=f"{self.tr('Total')}   {total}",font=('Segoe UI',10,'bold')).pack(anchor='w')
 
+    def company_header(self,parent):
+        profile=self.store.company_profile()
+        if not any(profile.values()): return
+        box=ttk.Frame(parent,padding=(8,3));box.pack(fill='x')
+        if profile['logo']:
+            from PIL import Image,ImageTk
+            from io import BytesIO
+            with Image.open(BytesIO(profile['logo'])) as image:
+                image.thumbnail((120,48))
+                photo=ImageTk.PhotoImage(image)
+            label=ttk.Label(box,image=photo);label.image=photo;label.pack(side='left',padx=8)
+        words=ttk.Frame(box);words.pack(fill='x')
+        if profile['company_name']:
+            ttk.Label(words,text=profile['company_name'],font=('Segoe UI',12,'bold'),wraplength=460).pack()
+        if profile['branch']:
+            ttk.Label(words,text=self.tr('Branch')+': '+profile['branch'],wraplength=460).pack()
+
+    def company_settings(self,parent):
+        self.store.require('admin')
+        saved=self.store.company_profile(); pending={'logo':saved['logo']}
+        box=ttk.LabelFrame(parent,text=self.tr('Company details'),padding=12);box.pack(fill='x',pady=8)
+        company=tk.StringVar(value=saved['company_name']);branch=tk.StringVar(value=saved['branch'])
+        box.columnconfigure(1,weight=1)
+        for row,(label,var) in enumerate((('Company name',company),('Branch',branch))):
+            ttk.Label(box,text=self.tr(label)).grid(row=row,column=0,padx=8,pady=5,sticky='e')
+            ttk.Entry(box,textvariable=var,width=48,justify='right' if self.lang=='ar' else 'left').grid(row=row,column=1,pady=5,sticky='ew')
+        ttk.Label(box,text=self.tr('Company logo')).grid(row=2,column=0,padx=8,sticky='e')
+        preview=ttk.Label(box);preview.grid(row=2,column=1,pady=4)
+        def show_logo():
+            preview.image=None
+            if pending['logo']:
+                from PIL import Image,ImageTk
+                from io import BytesIO
+                with Image.open(BytesIO(pending['logo'])) as image:
+                    image.thumbnail((200,72));preview.image=ImageTk.PhotoImage(image)
+                preview.configure(image=preview.image,text='')
+            else:preview.configure(image='',text=self.tr('No company logo'))
+        def choose():
+            path=filedialog.askopenfilename(parent=self,title=self.tr('Choose logo'),filetypes=[('PNG / JPEG','*.png *.jpg *.jpeg')])
+            if not path:return
+            with open(path,'rb') as image: data=image.read(MAX_LOGO_BYTES+1)
+            pending['logo']=normalize_logo(data);show_logo()
+        def remove():pending['logo']=b'';show_logo()
+        def save():
+            self.store.save_company_profile(company.get(),branch.get(),pending['logo'])
+            self.home();self.notebook.select(self.pages['Settings']);self.status.set(self.tr('Company details saved.'))
+        buttons=ttk.Frame(box);buttons.grid(row=3,column=0,columnspan=2)
+        self.button(buttons,'Choose logo',choose);self.button(buttons,'Remove logo',remove);self.button(buttons,'Save',save)
+        ttk.Label(box,text=self.tr('Saved in the selected database and included in reports.'),wraplength=600).grid(row=4,column=0,columnspan=2,pady=6)
+        show_logo()
+
     def render(self,name):
         f=self.pages[name]
         for w in f.winfo_children(): w.destroy()
         bar=ttk.Frame(f); bar.pack(fill='x')
         if name=='Settings':
+            self.store.require('admin')
+            self.company_settings(f)
             ttk.Label(f,text=self.store.path,wraplength=800).pack(pady=16)
             ttk.Label(f,text=self.tr('Database selection is remembered automatically.')).pack(pady=8)
             self.button(bar,'Choose database',lambda:self.open_database(True)); self.button(bar,'Backup database',self.backup); self.button(bar,'Import ZKTime MDB',self.import_mdb); return
@@ -443,7 +501,7 @@ class App(tk.Tk):
     def attendance_output(self,kind):
         if not self.attendance_rows: raise ValueError('No rows to export.')
         rows=[{k:v for k,v in r.items() if k!='truncated'} for r in self.attendance_rows]
-        kwargs=dict(title=self.attendance_title,translate=self.tr,arabic=self.lang=='ar')
+        kwargs=dict(title=self.attendance_title,translate=self.tr,arabic=self.lang=='ar',company=self.store.company_profile())
         if kind=='print':
             import uuid,webbrowser
             folder=self.config_dir/'print-previews'; folder.mkdir(exist_ok=True)
@@ -563,7 +621,7 @@ class App(tk.Tk):
 
     def report_output(self,kind):
         if not self.report_data:raise ValueError('No rows to export.')
-        kwargs=dict(title=self.report_title,translate=self.tr,arabic=self.lang=='ar',
+        kwargs=dict(title=self.report_title,translate=self.tr,arabic=self.lang=='ar',company=self.store.company_profile(),
                     summary=getattr(self,'report_summary_pairs',[]))
         if kind=='print':
             import uuid,webbrowser
@@ -579,7 +637,7 @@ class App(tk.Tk):
 
     def export(self,rows):
         p=filedialog.asksaveasfilename(defaultextension='.csv',filetypes=[('CSV','*.csv')])
-        if p: export_csv(p,rows); self.status.set(p)
+        if p: export_csv(p,rows,company=self.store.company_profile()); self.status.set(p)
     def backup(self):
         self.store.require('admin'); p=filedialog.asksaveasfilename(defaultextension='.sqlite',initialfile='Oasis Attend-backup.sqlite')
         if p:
@@ -656,10 +714,21 @@ def self_test(folder):
     app=App();app.withdraw();app.after_cancel(app.startup_id);app.open_database()
     if not app.store.rows('SELECT username FROM accounts'):app.store.account('smoke-admin','smoke-only-password','admin',True)
     app.store.login('smoke-admin','smoke-only-password')
+    from PIL import Image,ImageDraw
+    from io import BytesIO
+    logo_image=Image.new('RGB',(240,100),'#D39340');ImageDraw.Draw(logo_image).text((20,35),'TEST COMPANY',fill='black')
+    logo_buffer=BytesIO();logo_image.save(logo_buffer,format='PNG')
+    app.store.save_company_profile('Example Company / شركة اختبار','Riyadh / الرياض',logo_buffer.getvalue())
+    company=app.store.company_profile()
     for language in ('en','ar'):
         app.lang=language;app.home();app.update_idletasks()
         assert len(app.pages)==10
         for page in app.pages.values():app.notebook.select(page);app.update_idletasks()
+        def walk(widget):
+            yield widget
+            for child in widget.winfo_children():yield from walk(child)
+        for label in ('Company name','Branch','Choose logo','Remove logo'):
+            assert any(w.cget('text')==app.tr(label) for w in walk(app.pages['Settings']) if 'text' in w.keys())
     app.store.account('smoke-reader','smoke-only-password','reports')
     app.store.login('smoke-reader','smoke-only-password');app.home();app.update_idletasks()
     assert list(app.pages)==['Dashboard','Reports']
@@ -668,10 +737,10 @@ def self_test(folder):
     assert Path(bidi.__file__).suffix=='.py', 'bidi must remain externally replaceable'
     (folder/'dependency-paths.json').write_text(json.dumps({'bidi':bidi.__file__,'pyzatt':pyzatt.__file__}))
     sample=[{'badge':'001','name':'محمد أحمد','worked_minutes':480}]
-    export_pdf(folder/'check.pdf',sample,translate=app.tr,arabic=True)
-    export_excel(folder/'check.xls',sample)
-    export_excel(folder/'check.xlsx',sample)
-    export_print_html(folder/'check.html',sample)
+    export_pdf(folder/'check.pdf',sample,translate=app.tr,arabic=True,company=company)
+    export_excel(folder/'check.xls',sample,company=company)
+    export_excel(folder/'check.xlsx',sample,company=company)
+    export_print_html(folder/'check.html',sample,company=company)
     app.close();(folder/'self-test.json').write_text(json.dumps({'ok':True,'languages':['en','ar'],'device_connector_import':True,'reader_tabs':2,'admin_tabs':10}))
 
 if __name__=='__main__':

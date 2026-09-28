@@ -1,5 +1,5 @@
 """Attendance date range, bounds, read clone and pairing display."""
-import sys, types, tempfile, unittest
+import sys, types, tempfile, unittest, uuid, shutil
 from datetime import date
 from pathlib import Path
 
@@ -23,7 +23,8 @@ from datepicker import PRESETS, preset_range
 
 class Attendance(unittest.TestCase):
     def setUp(self):
-        self.folder = tempfile.mkdtemp()
+        self.folder = Path(tempfile.gettempdir()) / ('oasis-attendance-test-' + uuid.uuid4().hex)
+        self.folder.mkdir()
         self.store = Store(Path(self.folder) / 'test.sqlite')
         self.store.account('admin', 'passwordpass', 'admin', bootstrap=True)
         self.store.login('admin', 'passwordpass')
@@ -39,6 +40,7 @@ class Attendance(unittest.TestCase):
 
     def tearDown(self):
         self.store.close()
+        shutil.rmtree(self.folder)
 
     def test_bounds_come_from_the_data(self):
         self.assertEqual(self.store.punch_bounds(), (date(2026, 9, 1), date(2026, 9, 5)))
