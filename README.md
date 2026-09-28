@@ -38,6 +38,8 @@ Use a local SQLite file. Simultaneous multi-PC operation needs a server database
 
 ## Branding and license
 
+Version 1.1.2 adds **Settings → Company details** for administrators to change the company name, branch and logo. These are saved inside each attendance database and appear in PDF, Excel and print-preview reports. CSV includes the company and branch as text. See [COMPANY-SETTINGS.md](COMPANY-SETTINGS.md) for details.
+
 The application is distributed under the supplied **proprietary Oasis Digital Solutions EULA**, in LICENSE.txt. Third-party components retain their own licenses and rights in THIRD-PARTY-NOTICES.txt. This replaces the old GPL product declaration only for this new release. The supplied EULA's template-review wording is retained; its not-yet-in-force block is removed as requested.
 
 python-bidi remains an externally replaceable LGPL component; see REPLACING-BIDI.md and its included source. The app icon is `source/brand/app-icon.ico`; the 128px product logo appears above the existing ODS company wordmark on login. The window, executable and Inno Setup installer use the product icon.
