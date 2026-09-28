@@ -744,5 +744,11 @@ def self_test(folder):
     app.close();(folder/'self-test.json').write_text(json.dumps({'ok':True,'languages':['en','ar'],'device_connector_import':True,'reader_tabs':2,'admin_tabs':10}))
 
 if __name__=='__main__':
-    if len(sys.argv)==3 and sys.argv[1]=='--self-test':self_test(sys.argv[2])
+    if len(sys.argv)==3 and sys.argv[1]=='--self-test':
+        try:self_test(sys.argv[2])
+        except Exception:
+            import traceback
+            Path(sys.argv[2]).mkdir(parents=True,exist_ok=True)
+            (Path(sys.argv[2])/'self-test-error.txt').write_text(traceback.format_exc(),encoding='utf-8')
+            sys.exit(1)
     else:App().mainloop()
