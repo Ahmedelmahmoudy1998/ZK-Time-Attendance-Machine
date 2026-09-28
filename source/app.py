@@ -135,6 +135,7 @@ class App(tk.Tk):
         ttk.Label(frame,text=str(self.store.path),wraplength=650).pack(pady=2)
         ttk.Label(frame,text=self.tr('Database selection is remembered automatically.')).pack(pady=0)
         ttk.Label(frame,text=PRODUCER).pack(pady=(3,0))
+        ttk.Label(frame,text='Mob : 05555-69319').pack(pady=(2,0))
         ttk.Label(frame,text=COPYRIGHT,font=('Segoe UI',9)).pack()
         self.fit_to_content(frame)
         for child in frame.winfo_children():
