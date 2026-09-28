@@ -42,6 +42,17 @@ class Tests(unittest.TestCase):
         for _ in range(5):
             with self.assertRaises(ValueError):self.s.login('owner','wrong')
         with self.assertRaisesRegex(ValueError,'locked'):self.s.login('owner','strong-pass-123')
+    def test_eight_character_password_without_complexity(self):
+        self.s.account('simple','abcdefgh','reports')
+        self.s.login('simple','abcdefgh')
+        self.assertEqual(self.s.actor['username'],'simple')
+        self.s.login('owner','strong-pass-123')
+        self.s.account('simple','12345678','reports')
+        self.s.login('simple','12345678')
+        self.s.login('owner','strong-pass-123')
+        with self.assertRaisesRegex(ValueError,'at least 8 characters'):
+            self.s.account('simple','1234567','reports')
+        self.s.login('simple','12345678')
     def test_csv_formula(self):
         path=self.tmp/'out.csv'; export_csv(path,[{'name':'=SUM(A1:A2)'}]); self.assertIn("'=SUM",path.read_text('utf-8-sig'))
 

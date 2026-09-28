@@ -64,8 +64,8 @@ class Store:
         if not (bootstrap and not self.rows('SELECT username FROM accounts')):
             self.require('admin')
         username = username.strip()
-        if not username or len(password) < 10 or role not in ROLES:
-            raise ValueError('Use a username, a password of at least 10 characters, and a valid role.')
+        if not username or len(password) < 8 or role not in ROLES:
+            raise ValueError('Use a username, a password of at least 8 characters, and a valid role.')
         if self.actor and username == self.actor['username'] and role != 'admin':
             raise ValueError('You cannot demote your own administrator account.')
         salt = secrets.token_hex(16)
