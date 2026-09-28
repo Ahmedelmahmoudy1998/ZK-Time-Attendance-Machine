@@ -1,0 +1,37 @@
+# Private application data, device settings, and exports
+*.sqlite*
+*.db
+*.db-*
+*.mdb
+*.accdb
+*.mdp
+settings.json
+database-location.json
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+*.csv
+*.xlsx
+*.xls
+*.log
+backups/
+exports/
+
+# Generated Python and Windows builds
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+build/
+build-portable/
+dist/
+portable/
+installer/
+*.exe
+*.spec
+*.zip
+*.tar.gz
+!third-party-sources/*.zip
+!third-party-sources/*.tar.gz

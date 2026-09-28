@@ -1,0 +1,144 @@
+OASIS ATTEND
+END USER LICENCE AGREEMENT
+
+Copyright (c) 2026 Oasis Digital Solutions. All rights reserved.
+
+Oasis Attend ("the Software") is proprietary software owned by Oasis Digital
+Solutions ("ODS"), www.oasis-it.com. This document is a template prepared for
+ODS. It has not been reviewed by a lawyer and is not legal advice. Have your
+own counsel review and adapt it before it is issued to a customer.
+
+1. DEFINITIONS
+
+   "ODS" means Oasis Digital Solutions.
+   "Software" means the Oasis Attend application in object or source form,
+   together with its installers, data files, documentation and any updates
+   supplied by ODS.
+   "Licensee" means the organisation named in the accompanying order,
+   purchase order, contract or delivery note.
+   "Device" means a biometric or card attendance terminal from which the
+   Software collects records.
+
+2. GRANT OF LICENCE
+
+   Subject to payment of the applicable fees and to continued compliance with
+   this Agreement, ODS grants Licensee a non-exclusive, non-transferable,
+   non-sublicensable licence to install and use the Software for Licensee's
+   own internal business operations, at the sites and for the number of
+   Devices and named users stated in the accompanying order.
+
+   The Software is licensed, not sold. ODS and its licensors retain all right,
+   title and interest in and to the Software, including all intellectual
+   property rights.
+
+3. RESTRICTIONS
+
+   Licensee shall not, and shall not permit any third party to:
+
+   (a) copy the Software except for a reasonable number of backup copies;
+   (b) sell, rent, lease, lend, sublicense, host as a service, or otherwise
+       make the Software available to any third party;
+   (c) reverse engineer, decompile or disassemble the Software, or attempt to
+       derive its source code, except to the extent this restriction is
+       expressly prohibited by applicable law;
+   (d) modify, adapt or create derivative works of the Software;
+   (e) remove, obscure or alter any copyright, trademark, logo or other
+       proprietary notice in the Software or its output, including the ODS
+       mark and the producer and copyright lines on reports and exports;
+   (f) use the Software to provide attendance processing services to any
+       entity other than Licensee without a separate written agreement.
+
+4. LICENSEE DATA AND PRIVACY
+
+   All employee records, attendance records, biometric identifiers, templates
+   and reports processed by the Software remain the property and the
+   responsibility of Licensee. ODS does not access, transmit or store
+   Licensee's data; the Software operates against a local database chosen by
+   Licensee.
+
+   Licensee is solely responsible for establishing a lawful basis for the
+   collection and processing of employee biometric and attendance data, for
+   any required employee notice or consent, and for compliance with the
+   Saudi Personal Data Protection Law and any other law applicable to
+   Licensee's operations.
+
+5. SUPPORT AND UPDATES
+
+   Support, updates and new versions are provided only under a separate,
+   current maintenance or support agreement with ODS. Nothing in this
+   Agreement obliges ODS to provide them.
+
+6. TERM AND TERMINATION
+
+   This Agreement takes effect on first installation and continues until
+   terminated. ODS may terminate it on written notice if Licensee breaches any
+   term and fails to remedy the breach within thirty (30) days of notice. On
+   termination Licensee shall cease all use of the Software and destroy all
+   copies. Licensee's data remains Licensee's own and is unaffected.
+
+   Sections 3, 7, 8, 9 and 10 survive termination.
+
+7. WARRANTY DISCLAIMER
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT.
+
+   ODS does not warrant that the Software will be uninterrupted or error free,
+   nor that attendance calculations will match any particular payroll rule set
+   without configuration. Attendance figures are derived from the clocks and
+   records of Licensee's Devices; ODS is not responsible for device clock
+   drift, missed scans, or records absent from a Device.
+
+   Licensee is responsible for reviewing reports before they are used for
+   payroll, disciplinary or contractual purposes.
+
+8. THIRD-PARTY COMPONENTS
+
+   The Software includes third-party components licensed by their respective
+   owners. Those components are governed by their own licence terms, which
+   take precedence over this Agreement in respect of those components. The
+   complete list of components, versions and licence texts is delivered with
+   the Software in THIRD-PARTY-NOTICES.txt, which must accompany every copy.
+
+   Nothing in this Agreement limits any right Licensee has under the licence
+   of any open-source component included in the Software.
+
+9. LIMITATION OF LIABILITY
+
+   TO THE MAXIMUM EXTENT PERMITTED BY LAW, ODS SHALL NOT BE LIABLE FOR ANY
+   INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL OR PUNITIVE DAMAGES, OR FOR
+   ANY LOSS OF PROFITS, REVENUE, DATA OR BUSINESS, ARISING OUT OF OR RELATED
+   TO THE SOFTWARE, WHETHER IN CONTRACT, TORT OR OTHERWISE, EVEN IF ODS HAS
+   BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+   ODS'S TOTAL AGGREGATE LIABILITY ARISING OUT OF OR RELATED TO THIS AGREEMENT
+   SHALL NOT EXCEED THE FEES PAID BY LICENSEE FOR THE SOFTWARE IN THE TWELVE
+   (12) MONTHS PRECEDING THE EVENT GIVING RISE TO THE CLAIM.
+
+   Nothing in this Agreement excludes or limits liability that cannot lawfully
+   be excluded or limited.
+
+10. GOVERNING LAW
+
+   This Agreement is governed by the laws of the Kingdom of Saudi Arabia. The
+   competent courts of the Kingdom of Saudi Arabia shall have exclusive
+   jurisdiction over any dispute arising out of or in connection with it.
+
+11. ENTIRE AGREEMENT
+
+   This Agreement, together with the accompanying order and any signed
+   maintenance agreement, is the entire agreement between the parties in
+   respect of the Software and supersedes all prior proposals and
+   representations. If any provision is held unenforceable, the remainder
+   continues in full force.
+
+--------------------------------------------------------------------------
+
+Oasis Digital Solutions
+www.oasis-it.com
+
+Oasis Attend and the Oasis Attend mark are trademarks of Oasis Digital
+Solutions. ZKTeco, MB20, MB1000, MB2000 and uFace800 are trademarks of their
+respective owners and are used for identification only; Oasis Attend is not
+affiliated with or endorsed by ZKTeco.
