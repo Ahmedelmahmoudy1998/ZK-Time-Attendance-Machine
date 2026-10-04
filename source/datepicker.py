@@ -88,7 +88,7 @@ class DateDialog(tk.Toplevel):
 
         footer = ttk.Frame(outer)
         footer.pack(fill='x', pady=(10, 0))
-        ttk.Button(footer, text=translate('Today'), width=10,
+        ttk.Button(footer, text=translate('Today'), width=10, style='Primary.TButton',
                    command=lambda: self.choose(date.today())).pack(side='left')
         ttk.Button(footer, text=translate('Cancel'), width=10,
                    command=self.destroy).pack(side='right')
@@ -146,7 +146,7 @@ class DateDialog(tk.Toplevel):
 
 
 class DateField(ttk.Frame):
-    """A label showing one date plus its own Calendar button."""
+    """One keyboard-accessible date control that opens its calendar."""
 
     def __init__(self, master, label, value, on_change, translate=lambda x: x, rtl=False):
         super().__init__(master)
@@ -156,12 +156,12 @@ class DateField(ttk.Frame):
         self.rtl = rtl
         self.label = label
         ttk.Label(self, text=translate(label)).pack(anchor='e' if rtl else 'w')
-        row = ttk.Frame(self)
-        row.pack()
-        self.text = tk.StringVar(value=value.isoformat())
-        ttk.Label(row, textvariable=self.text, width=13, relief='sunken', padding=4,
-                  anchor='center').pack(side='left')
-        ttk.Button(row, text=translate('Calendar'), width=10, command=self.open).pack(side='left', padx=4)
+        self.text = tk.StringVar(value=value.isoformat()+'  ▾')
+        self.control = ttk.Button(self, textvariable=self.text, width=17,
+                                  style='Primary.TButton', command=self.open)
+        self.control.pack(fill='x')
+        self.control.bind('<Return>', lambda event: self.open())
+        self.control.bind('<Down>', lambda event: self.open())
 
     def open(self):
         DateDialog(self, self.value, self.set_value, self.translate, self.rtl,
@@ -169,7 +169,7 @@ class DateField(ttk.Frame):
 
     def set_value(self, value, notify=True):
         self.value = value
-        self.text.set(value.isoformat())
+        self.text.set(value.isoformat()+'  ▾')
         if notify:
             self.on_change()
 

@@ -65,7 +65,7 @@ class App(tk.Tk):
         try: return fn()
         except Exception as e: messagebox.showerror('Oasis Attend',self.tr(str(e)),parent=self)
     def button(self,parent,label,fn):
-        b=ttk.Button(parent,text=self.tr(label),style='Primary.TButton' if label in ('Login','Create administrator','Save','Generate','Download users + logs') else 'TButton',command=lambda:self.guard(fn)); b.pack(side='left',padx=4,pady=4); return b
+        b=ttk.Button(parent,text=self.tr(label),style='Primary.TButton' if label in ('Login','Create administrator','Save','Generate','Print preview','Download users + logs') else 'TButton',command=lambda:self.guard(fn)); b.pack(side='left',padx=4,pady=4); return b
     def form(self,title,fields,callback):
         top=tk.Toplevel(self); top.title(self.tr(title)); top.transient(self); top.grab_set(); box=ttk.Frame(top,padding=22); box.pack(fill='both',expand=True); values={}
         for i,(label,value,choices) in enumerate(fields):
