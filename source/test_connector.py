@@ -7,6 +7,30 @@ from device_session import DeviceSession
 from pyzatt import misc
 
 class ConnectorTests(unittest.TestCase):
+    def test_reply_6001_is_rejected_and_preserved_for_ui(self):
+        from device_session import DirectConnectionRejected
+        session=DeviceSession()
+        def reply():session.last_reply_code=6001;session.last_session_code=123
+        with patch('device_session.socket.create_connection'),patch.object(session,'send_command') as send,patch.object(session,'recv_reply',side_effect=reply):
+            with self.assertRaises(DirectConnectionRejected) as failure:
+                session.connect('127.0.0.1',4370)
+            self.assertEqual(failure.exception.reply_code,6001)
+            self.assertFalse(session.connected_flg)
+            self.assertEqual(send.call_count,1)
+
+    def test_reply_6001_offers_biotime_without_claiming_success(self):
+        from app import App
+        from device_session import DirectConnectionRejected
+        app=SimpleNamespace(tr=lambda value:value)
+        for accept in (False,True):
+            with patch('app.messagebox.askyesno',return_value=accept),patch('app.open_biotime') as open_form,patch('app.messagebox.showerror') as error:
+                App.operation_error(app,DirectConnectionRejected(6001))
+                self.assertEqual(open_form.call_count,int(accept))
+                error.assert_not_called()
+        with patch('app.messagebox.askyesno') as prompt,patch('app.open_biotime') as open_form,patch('app.messagebox.showerror') as error:
+            App.operation_error(app,ConnectionError('A different error'))
+            error.assert_called_once();prompt.assert_not_called();open_form.assert_not_called()
+
     def test_u160_names_do_not_interrupt_download(self):
         cases=[('محمد'.encode('utf-8')+b'\0\xff', 'محمد'),
                (b'A'+('م'*12).encode('utf-8')[:23], 'A'+'م'*11),

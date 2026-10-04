@@ -9,6 +9,7 @@ from biotime import BioTimeClient, server_url
 from datepicker import DateField
 
 TRANSLATIONS = {
+    'The device rejected the direct download (6001). If it is connected to BioTime, import its attendance through BioTime. Open Import from BioTime now?': 'رفض الجهاز التنزيل المباشر (6001). إذا كان متصلاً بـ BioTime، يمكنك استيراد الحضور من خلاله. هل تريد فتح الاستيراد من BioTime الآن؟',
     'Import from BioTime': 'استيراد من BioTime',
     'BioTime server URL': 'عنوان خادم BioTime',
     'BioTime username': 'اسم مستخدم BioTime',

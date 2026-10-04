@@ -21,6 +21,12 @@ CMD_ACK_UNAUTH = getattr(DEFS, 'CMD_ACK_UNAUTH', 1999)
 MASK32 = 0xFFFFFFFF
 
 
+class DirectConnectionRejected(ConnectionError):
+    def __init__(self, reply_code):
+        self.reply_code = reply_code
+        super().__init__(f'The device rejected the direct connection (reply code {reply_code}).')
+
+
 def scramble_comm_key(key, session_id, ticks=50):
     """Return the 4 byte payload for CMD_AUTH.
 
@@ -67,10 +73,7 @@ class DeviceSession(ZKSS):
                     'on the device under Comm. > Security and enter the same number.')
 
         if not self.connected_flg:
-            raise ConnectionError(
-                'Device refused the connection (reply code '
-                f'{getattr(self, "last_reply_code", "unknown")}). Check that the '
-                'device is reachable on this port and not already in use by ZKTime.')
+            raise DirectConnectionRejected(getattr(self, 'last_reply_code', 'unknown'))
 
     def send_packet(self, packet): self.soc_zk.sendall(packet)
 
