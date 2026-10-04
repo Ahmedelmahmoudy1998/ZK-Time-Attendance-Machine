@@ -4,6 +4,8 @@ Owner: **Oasis Digital Solutions**. Arabic product name: **حضور أوايسس
 
 ## Run or install
 
+Version 1.1.8 combines each date display and calendar opener into one gold date control. Click the date or use Enter, Space or Down to choose a date. Print preview and the calendar's Today action use the same accent as Generate in both themes.
+
 Version 1.1.7 adds coordinated **Light / Dark** appearance options on the login screen, in the app header, and under Settings. Light mode uses white panels with navy and gold accents; dark mode uses charcoal panels with gold accents. The choice is saved on this PC and applies immediately without losing open forms or selected filters. Tables, calendars and dropdowns follow the chosen appearance; exported reports retain their print-friendly colors.
 
 Extract the portable folder and run `portable/Oasis Attend/Oasis Attend.exe`. Keep `_internal` and the license/source notices alongside the executable. Python is included. Windows 10/11 x64 is the target. Alternatively, use `installer/Oasis Attend Setup.exe`; the installer places the same folder layout under the current Windows user's Programs directory and creates shortcuts. Binaries are unsigned.
