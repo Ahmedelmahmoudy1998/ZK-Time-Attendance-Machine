@@ -10,6 +10,8 @@ First run automatically copies `%LOCALAPPDATA%\ZKDesk\settings.json` to `%LOCALA
 
 ## Devices and MDB import
 
+Version 1.1.6 fixes U160-C downloads that failed on Arabic names. The name reader stops at the end marker and retains complete characters when the terminal truncates a name at its 24-byte limit. Malformed display-name bytes no longer stop attendance downloads; badge numbers and record lengths remain strictly validated. The adapter does not change names or records on the device.
+
 Version 1.1.5 saves each device's **Communication key (0 if none)** directly after its IP address in **Devices → Add / Edit**, and displays it beside the IP in the device list. Downloads use the saved value without prompting each time. Existing devices start at 0; set another value only if configured on the terminal. Zero-key authentication challenges are now supported, and rejected keys still fail normally.
 
 The connector uses MIT-licensed pyzatt 2.0.0 pinned to upstream commit `dc30714ed641388f53537319f6c0e7bd8dba544a`. No pyzk library or archive ships in this release. The adapter reads users and attendance logs, with a 20-second socket timeout, complete TCP frame reads, socket cleanup and full 32-bit dataset lengths.
