@@ -1,4 +1,4 @@
-# Direct attendance reception — Oasis Attend 1.1.11
+# Direct attendance reception — Oasis Attend 1.1.12
 
 Oasis Attend includes an ADMS HTTP receiver. Compatible terminals send attendance
 directly into the selected Oasis SQLite database; BioTime is not required or contacted.
@@ -63,4 +63,4 @@ request bodies are not retained.
 Implementation reference: ZKTeco Attendance PUSH Communication Protocol, March 2020,
 protocol 2.4.1 (manufacturer manual). Protocol simulation and packaged app tests cover
 handshake, commit/retry, duplicate replay, history requests and report compatibility.
-Live MB20-VL compatibility must also be checked after pointing the terminal at Oasis.
+Live MB20-VL handshake and historical attendance transfer were verified. Check a fresh punch after setup to confirm real-time reception.
