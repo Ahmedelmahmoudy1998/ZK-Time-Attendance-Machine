@@ -13,7 +13,7 @@ class ConnectorTests(unittest.TestCase):
         with patch('device_session.DeviceSession',return_value=fake):
             users,punches=download({'ip':'127.0.0.1','port':4370,'udp':0})
         self.assertEqual(users,[{'badge':'001','name':'Example'}]);self.assertEqual(punches[0]['kind'],'0')
-        fake.connect.assert_called_once_with('127.0.0.1',4370,timeout=20);fake.close.assert_called_once()
+        fake.connect.assert_called_once_with('127.0.0.1',4370,timeout=20,comm_key=0);fake.close.assert_called_once()
     def test_failed_download_closes_and_preserves_error(self):
         fake=MagicMock();fake.read_att_log.side_effect=TimeoutError('original failure');fake.close.side_effect=OSError('cleanup')
         with patch('device_session.DeviceSession',return_value=fake):
@@ -22,14 +22,15 @@ class ConnectorTests(unittest.TestCase):
     def test_unsupported_modes_fail_before_network(self):
         with patch('device_session.DeviceSession') as factory:
             with self.assertRaisesRegex(ValueError,'TCP only'):download({'ip':'127.0.0.1','port':4370,'udp':1})
-            with self.assertRaisesRegex(ValueError,'password'):download({'ip':'127.0.0.1','port':4370,'udp':0},123)
+            with self.assertRaisesRegex(ValueError,'communication key'):download({'ip':'127.0.0.1','port':4370,'udp':0},-1)
             factory.assert_not_called()
     def test_large_attendance_dataset(self):
         session=DeviceSession();record=bytearray(40);struct.pack_into('<H',record,0,9)
-        record[2:5]=b'001';record[27:31]=misc.encode_time(datetime(2020,1,1,8))
+        record[2:5]=b'001';record[27:31]=misc.encode_time(datetime(2026,10,4,13,51,21))
         data=struct.pack('<I',40*2000)+record*2000
         with patch.object(session,'send_command'),patch.object(session,'recv_long_reply',return_value=data):session.read_att_log()
         self.assertEqual(len(session.att_log),2000);self.assertEqual(session.att_log[0].user_id,'001')
+        self.assertEqual(session.att_log[0].att_time,datetime(2026,10,4,13,51,21))
     def test_fragmented_tcp_and_eof(self):
         from pyzatt.zkmodules import defs
         session=DeviceSession();packet=session.create_packet(defs.CMD_ACK_OK)
@@ -58,7 +59,7 @@ class ConnectorTests(unittest.TestCase):
                                 record[11:18]=b'Example';record[48:51]=b'001'
                             else:
                                 record=bytearray(40);struct.pack_into('<H',record,0,9)
-                                record[2:5]=b'001';record[27:31]=misc.encode_time(datetime(2020,1,1,8))
+                                record[2:5]=b'001';record[27:31]=misc.encode_time(datetime(2026,10,4,13,51,21))
                             payload=struct.pack('<I',len(record))+record;reply=defs.CMD_DATA
                         peer.sendall(wire.create_packet(reply,payload,session_id=123))
             except BaseException as e:failures.append(e)
@@ -67,6 +68,7 @@ class ConnectorTests(unittest.TestCase):
         users,punches=download({'ip':'127.0.0.1','port':port,'udp':0})
         thread.join(6)
         self.assertFalse(thread.is_alive());self.assertFalse(failures)
-        self.assertEqual(users,[{'badge':'001','name':'Example'}]);self.assertEqual(punches[0]['stamp'],'2020-01-01 08:00:00')
+        self.assertEqual(users,[{'badge':'001','name':'Example'}]);self.assertEqual(punches[0]['stamp'],'2026-10-04 13:51:21')
+        self.assertEqual(punches[0]['legacy_stamp'],'2027-10-04 13:51:21')
 
 if __name__=='__main__':unittest.main()

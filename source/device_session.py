@@ -12,7 +12,7 @@ the app keeps its own licence; no GPL source is reused.
 import socket, struct
 from pyzatt.pyzatt import ZKSS
 from pyzatt.zkmodules import defs as DEFS
-from pyzatt import misc
+from device_time import decode_device_time
 
 # pyzatt does not expose these two in every build, so fall back to the wire values.
 CMD_AUTH = getattr(DEFS, 'CMD_AUTH', 1102)
@@ -118,7 +118,7 @@ class DeviceSession(ZKSS):
         for pos in range(4, len(data), 40):
             self.append_att_entry(struct.unpack_from('<H', data, pos)[0],
                 data[pos + 2:pos + 11].decode('ascii').rstrip('\x00'), data[pos + 26],
-                misc.decode_time(data[pos + 27:pos + 31]), data[pos + 31])
+                decode_device_time(data[pos + 27:pos + 31]), data[pos + 31])
 
     def close(self):
         sock = getattr(self, 'soc_zk', None)

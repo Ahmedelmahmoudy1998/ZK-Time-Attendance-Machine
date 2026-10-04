@@ -148,14 +148,33 @@ class Store(CompanyProfileStore):
 
     def ingest(self, employees, punches, source):
         self.require('admin')
-        before=self.db.total_changes
+        punches=list(punches)
+        identities={(str(p['badge']),datetime.fromisoformat(p['stamp']).replace(microsecond=0).isoformat(sep=' ')) for p in punches}
+        added=0
         with self.db:
+            repaired=0
+            for p in punches:
+                if not p.get('legacy_stamp'):continue
+                badge=str(p['badge']);old=datetime.fromisoformat(p['legacy_stamp']).replace(microsecond=0).isoformat(sep=' ')
+                stamp=datetime.fromisoformat(p['stamp']).replace(microsecond=0).isoformat(sep=' ')
+                # Never move a timestamp that is also a real record in this download.
+                if old==stamp or (badge,old) in identities:continue
+                found=self.db.execute('SELECT kind FROM punches WHERE badge=? AND stamp=? AND source=?',(badge,old,source)).fetchone()
+                if not found or found['kind']!=str(p.get('kind') or ''):continue
+                self.db.execute('''CREATE TABLE IF NOT EXISTS punch_time_repair_archive(
+                    badge TEXT, original_stamp TEXT, corrected_stamp TEXT, kind TEXT, source TEXT, repaired_at TEXT)''')
+                self.db.execute('INSERT INTO punch_time_repair_archive VALUES(?,?,?,?,?,?)',
+                    (badge,old,stamp,found['kind'],source,datetime.now().isoformat(timespec='seconds')))
+                self.db.execute('DELETE FROM punches WHERE badge=? AND stamp=? AND source=?',(badge,old,source))
+                repaired+=1
+            before=self.db.total_changes
             for e in employees:
                 self.db.execute('INSERT INTO employees(badge,name,department) VALUES(?,?,?) ON CONFLICT(badge) DO NOTHING',(str(e['badge']),str(e.get('name') or e['badge']),str(e.get('department') or '')))
             for p in punches:
                 stamp=datetime.fromisoformat(p['stamp']).replace(microsecond=0).isoformat(sep=' ')
                 self.db.execute('INSERT OR IGNORE INTO punches VALUES(?,?,?,?)',(str(p['badge']),stamp,str(p.get('kind') or ''),source))
             added=self.db.total_changes-before
+            if repaired:self.log(f'Corrected {repaired} device punch dates from {source}; original rows archived')
             self.log(f'Imported {added} new rows from {source}')
         return added
 

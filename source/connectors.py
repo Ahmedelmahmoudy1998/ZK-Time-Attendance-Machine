@@ -55,6 +55,8 @@ try {
 
 def download(device,password=0):
     from device_session import DeviceSession
+    from device_time import previous_decoded_time
+    from pyzatt.misc import encode_time
     import ipaddress
     if int(device.get('udp',0)):
         raise ValueError('The selected pyzatt connector supports TCP only. UDP download is not available.')
@@ -68,7 +70,9 @@ def download(device,password=0):
         conn.connect(str(ip),port,timeout=20,comm_key=key)
         conn.read_all_user_id();conn.read_att_log()
         result=([{'badge':str(u.user_id),'name':u.user_name} for u in conn.users.values()],
-                [{'badge':str(p.user_id),'stamp':p.att_time.isoformat(sep=' '),'kind':str(p.ver_state)} for p in conn.att_log])
+                [{'badge':str(p.user_id),'stamp':p.att_time.isoformat(sep=' '),'kind':str(p.ver_state),
+                  'legacy_stamp':old.isoformat(sep=' ') if (old:=previous_decoded_time(encode_time(p.att_time))) else None}
+                 for p in conn.att_log])
     except BaseException:
         try:conn.close()
         except Exception:pass  # Preserve the original download/authentication failure.
