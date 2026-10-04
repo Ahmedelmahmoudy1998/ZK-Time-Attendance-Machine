@@ -10,9 +10,11 @@ First run automatically copies `%LOCALAPPDATA%\ZKDesk\settings.json` to `%LOCALA
 
 ## Devices and MDB import
 
+Version 1.1.5 saves each device's **Communication key (0 if none)** directly after its IP address in **Devices → Add / Edit**, and displays it beside the IP in the device list. Downloads use the saved value without prompting each time. Existing devices start at 0; set another value only if configured on the terminal. Zero-key authentication challenges are now supported, and rejected keys still fail normally.
+
 The connector uses MIT-licensed pyzatt 2.0.0 pinned to upstream commit `dc30714ed641388f53537319f6c0e7bd8dba544a`. No pyzk library or archive ships in this release. The adapter reads users and attendance logs, with a 20-second socket timeout, complete TCP frame reads, socket cleanup and full 32-bit dataset lengths.
 
-**This pyzatt version supports TCP only and does not implement communication-password authentication.** UDP and nonzero communication passwords are rejected before connecting. Existing device settings are preserved; unsupported modes are not silently changed. Targets MB20, MB1000, MB2000 and uFace800 remain unverified on real hardware. An authenticated/UDP connector requires additional work; this release does not claim those capabilities.
+**The connector supports TCP only.** The app adds communication-key authentication to pyzatt, including terminals that require authentication with key 0. UDP remains unsupported. Existing device settings are preserved. A live device download with key 0 has been verified; model-specific compatibility across MB20, MB1000, MB2000 and uFace800 has not been established for every model.
 
 MDB import reads a temporary copy through Microsoft ACE 64-bit OLE DB. Employees, attendance and machine settings are imported; legacy schedules are not. The original MDB is not edited. No production database is included in this package. Employee changes remain local and are not pushed to machines. No biometric templates are downloaded and no device logs are cleared.
 
