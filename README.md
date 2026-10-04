@@ -4,6 +4,8 @@ Owner: **Oasis Digital Solutions**. Arabic product name: **حضور أوايسس
 
 ## Run or install
 
+Version 1.1.10 replaces the unhelpful direct-connection error 6001 with an option to open **Import from BioTime** immediately. The direct connection remains unsupported for affected devices; the prompt offers the existing BioTime importer and does not claim a successful download.
+
 Version 1.1.9 adds **Devices → Import from BioTime**. It reads attendance through BioTime's documented API, with a device serial number and date range, a preview, and an automatic Oasis database backup before import. Repeated imports skip existing punches and preserve existing employee details. See [BIOTIME.md](BIOTIME.md) for setup and limitations. This does not change the direct TCP connector or fix device reply 6001; BioTime must remain running and receiving the terminal's ADMS data.
 
 Version 1.1.8 combines each date display and calendar opener into one gold date control. Click the date or use Enter, Space or Down to choose a date. Print preview and the calendar's Today action use the same accent as Generate in both themes.
