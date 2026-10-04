@@ -18,6 +18,8 @@ MDB import reads a temporary copy through Microsoft ACE 64-bit OLE DB. Employees
 
 ## Punch deduplication upgrade
 
+Version 1.1.4 fixes ZK attendance dates decoded with the wrong year. The device format uses twelve 31-day slots per year; treating it as 365 days could place 2026 punches in 2027. Install the update and download users and logs again, then regenerate the report. Matching old imports from the same device are corrected only when re-reading their original records, with the previous timestamps retained in `punch_time_repair_archive` and an audit entry. Records from other sources and timestamps also present as real device records are left unchanged. Back up the database before upgrading.
+
 One physical punch is identified by **badge and timestamp to the second**, regardless of its source or punch-state encoding. On first opening an older database, an atomic migration keeps the earliest stored row for that identity, including its first-seen `kind` and `source`. Removed duplicates are preserved in `punch_duplicate_archive`; an audit entry records the number consolidated. Reopening does not repeat the migration. Re-importing the same MDB/device punch no longer inflates the Attendance list or dashboard. Two genuinely different events for the same employee at exactly the same second are represented as one punch, consistent with existing report calculations.
 
 ## Roles, shifts and reports
