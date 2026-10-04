@@ -7,6 +7,32 @@ from device_session import DeviceSession
 from pyzatt import misc
 
 class ConnectorTests(unittest.TestCase):
+    def test_u160_names_do_not_interrupt_download(self):
+        cases=[('محمد'.encode('utf-8')+b'\0\xff', 'محمد'),
+               (b'A'+('م'*12).encode('utf-8')[:23], 'A'+'م'*11),
+               ('علي'.encode('utf-8'), 'علي'),
+               (b'Bad\xffName', 'Bad\ufffdName'), (b'', '')]
+        records=[]
+        for serial,(raw,expected) in enumerate(cases,1):
+            record=bytearray(72);struct.pack_into('<H',record,0,serial)
+            record[11:11+len(raw)]=raw;record[48:51]=f'{serial:03}'.encode('ascii')
+            records.append(record)
+        session=DeviceSession();data=struct.pack('<I',72*len(records))+b''.join(records)
+        with patch.object(session,'send_command'),patch.object(session,'recv_long_reply',return_value=data):
+            session.read_all_user_id()
+        self.assertEqual([u.user_name for u in session.users.values()],[x[1] for x in cases])
+        self.assertEqual([u.user_id for u in session.users.values()],['001','002','003','004','005'])
+
+    def test_user_identity_and_record_lengths_remain_strict(self):
+        for payload in (bytearray(71),bytearray(72),bytearray(72)):
+            if len(payload)==72:payload[48]=255
+            session=DeviceSession();data=struct.pack('<I',len(payload))+payload
+            with patch.object(session,'send_command'),patch.object(session,'recv_long_reply',return_value=data):
+                with self.assertRaises(ValueError):session.read_all_user_id()
+        session=DeviceSession();data=struct.pack('<I',72)+bytearray(72)
+        with patch.object(session,'send_command'),patch.object(session,'recv_long_reply',return_value=data):
+            with self.assertRaisesRegex(ValueError,'empty user badge'):session.read_all_user_id()
+
     def test_saved_key_is_used_and_can_be_overridden_with_zero(self):
         for override,expected in ((None,123),(0,0)):
             fake=MagicMock();fake.users={};fake.att_log=[]

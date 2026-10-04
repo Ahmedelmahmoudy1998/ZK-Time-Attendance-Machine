@@ -1,6 +1,6 @@
 """Bounded TCP transport for the pinned MIT pyzatt session.
 
-Uses pyzatt's packet/dataset commands and user parser. Does not write SDKBuild,
+Uses pyzatt's packet/dataset commands. Does not write SDKBuild,
 disable terminals, clear logs, or read biometric templates.
 
 Adds the communication key handshake, which pyzatt does not implement. When a
@@ -9,7 +9,7 @@ client must reply with CMD_AUTH carrying the key scrambled with the session id.
 The transform below is written here from the published ZK protocol behaviour so
 the app keeps its own licence; no GPL source is reused.
 """
-import socket, struct
+import codecs, socket, struct
 from pyzatt.pyzatt import ZKSS
 from pyzatt.zkmodules import defs as DEFS
 from device_time import decode_device_time
@@ -103,6 +103,30 @@ class DeviceSession(ZKSS):
             raise ValueError('Device dataset length mismatch; download was not imported.')
         self.last_payload_data = data
         return data
+
+    def read_all_user_id(self):
+        self.send_command(DEFS.CMD_DATA_WRRQ, bytearray.fromhex('0109000500000000000000'))
+        data = self.recv_long_reply()
+        if (len(data) - 4) % 72:
+            raise ValueError('Unsupported user record format; download was not imported.')
+        users = []
+        for pos in range(4, len(data), 72):
+            serial = struct.unpack_from('<H', data, pos)[0]
+            # Identity remains strict. Never repair or guess a badge number.
+            badge = data[pos + 48:pos + 57].split(b'\x00', 1)[0].decode('ascii')
+            if not badge:
+                raise ValueError('Device returned an empty user badge; download was not imported.')
+            raw_name = bytes(data[pos + 11:pos + 35]).split(b'\x00', 1)[0]
+            # U160-C can leave garbage after NUL or cut a UTF-8 character at
+            # the 24-byte name boundary. Ignore padding and retain the complete
+            # prefix; replace any malformed interior display-name bytes only.
+            name = codecs.getincrementaldecoder('utf-8')(errors='replace').decode(raw_name, final=False)
+            users.append((serial, badge, name))
+        self.users = {}
+        for serial, badge, name in users:
+            self.add_user(serial)
+            # Download needs identity/name only, not device passwords or cards.
+            self.users[serial].set_user_info(user_sn=serial, user_id=badge, name=name)
 
     def read_att_log(self):
         # pyzatt 2.0 reads a 16-bit size and loses the assembled long dataset.
