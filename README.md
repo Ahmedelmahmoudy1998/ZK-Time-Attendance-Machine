@@ -4,6 +4,8 @@ Owner: **Oasis Digital Solutions**. Arabic product name: **حضور أوايسس
 
 ## Run or install
 
+Version 1.1.11 adds **Devices → Receive from device (ADMS)** for standalone attendance reception, with no BioTime dependency. Configure the terminal to send to the PC on port 8081, start the receiver, and keep Oasis open and logged in. Batches commit before acknowledgement; replays are deduplicated. Includes saved settings, automatic backup, live contact/upload status, and a read-only historical attendance request. See [ADMS.md](ADMS.md). Reply 6001 now offers this receiver. Live terminal compatibility still needs verification after changing its server destination.
+
 Version 1.1.10 replaces the unhelpful direct-connection error 6001 with an option to open **Import from BioTime** immediately. The direct connection remains unsupported for affected devices; the prompt offers the existing BioTime importer and does not claim a successful download.
 
 Version 1.1.9 adds **Devices → Import from BioTime**. It reads attendance through BioTime's documented API, with a device serial number and date range, a preview, and an automatic Oasis database backup before import. Repeated imports skip existing punches and preserve existing employee details. See [BIOTIME.md](BIOTIME.md) for setup and limitations. This does not change the direct TCP connector or fix device reply 6001; BioTime must remain running and receiving the terminal's ADMS data.
