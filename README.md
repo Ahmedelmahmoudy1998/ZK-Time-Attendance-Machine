@@ -4,6 +4,8 @@ Owner: **Oasis Digital Solutions**. Arabic product name: **حضور أوايسس
 
 ## Run or install
 
+Version 1.1.9 adds **Devices → Import from BioTime**. It reads attendance through BioTime's documented API, with a device serial number and date range, a preview, and an automatic Oasis database backup before import. Repeated imports skip existing punches and preserve existing employee details. See [BIOTIME.md](BIOTIME.md) for setup and limitations. This does not change the direct TCP connector or fix device reply 6001; BioTime must remain running and receiving the terminal's ADMS data.
+
 Version 1.1.8 combines each date display and calendar opener into one gold date control. Click the date or use Enter, Space or Down to choose a date. Print preview and the calendar's Today action use the same accent as Generate in both themes.
 
 Version 1.1.7 adds coordinated **Light / Dark** appearance options on the login screen, in the app header, and under Settings. Light mode uses white panels with navy and gold accents; dark mode uses charcoal panels with gold accents. The choice is saved on this PC and applies immediately without losing open forms or selected filters. Tables, calendars and dropdowns follow the chosen appearance; exported reports retain their print-friendly colors.
