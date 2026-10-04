@@ -60,7 +60,7 @@ class AdmsTests(unittest.TestCase):
         rows = self.store.rows('SELECT * FROM punches')
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]['badge'], '00201')
-        self.assertEqual(rows[0]['stamp'], '2026-10-04T08:00:00')
+        self.assertEqual(rows[0]['stamp'], '2026-10-04 08:00:00')
         self.receiver.stop()
         self.receiver = Receiver(self.store.path, self.config)
         self.receiver.start()
@@ -125,11 +125,19 @@ class AdmsTests(unittest.TestCase):
         self.assertEqual(self.request(path='/iclock/getrequest'), (200, 'OK'))
 
     def test_no_replacement_of_biotime_punch(self):
-        with self.store.db:
-            self.store.db.execute("INSERT INTO punches VALUES('00201','2026-10-04T08:00:00','I','BioTime')")
+        # Use the real existing importer, not a fixture duplicating receiver formatting.
+        self.store.ingest([{'badge': '00201', 'name': 'Existing employee'}],
+                          [{'badge': '00201', 'stamp': '2026-10-04T08:00:00', 'kind': 'I'}], 'BioTime')
         self.assertEqual(self.upload(), (200, 'OK: 1'))
         self.assertEqual(self.store.rows('SELECT * FROM punches')[0]['source'], 'BioTime')
         self.assertEqual(self.receiver.status()['new_punches'], 0)
+        self.assertEqual(len(self.store.rows('SELECT * FROM punches')), 1)
+
+    def test_importer_replay_after_adms_and_report(self):
+        self.assertEqual(self.upload(), (200, 'OK: 1'))
+        self.assertEqual(self.store.ingest([], [{'badge': '00201', 'stamp': '2026-10-04T08:00:00'}], 'BioTime'), 0)
+        report = self.store.report('2026-10-04', '2026-10-04', '00201')
+        self.assertEqual(report[0]['punches'], 1)
 
     def test_configuration_role_and_input_limits(self):
         with self.assertRaises(ValueError):

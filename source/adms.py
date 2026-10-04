@@ -62,7 +62,7 @@ def attendance(body):
         pin = badge(fields[0])
         if not re.fullmatch(r'\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}', fields[1]):
             raise ValueError('Invalid attendance time; batch was not saved.')
-        stamp = datetime.strptime(fields[1], '%Y-%m-%d %H:%M:%S').isoformat(timespec='seconds')
+        stamp = datetime.strptime(fields[1], '%Y-%m-%d %H:%M:%S').isoformat(sep=' ', timespec='seconds')
         if not re.fullmatch(r'\d{1,3}', fields[2]):
             raise ValueError('Invalid attendance state; batch was not saved.')
         result.append((pin, stamp, fields[2]))
