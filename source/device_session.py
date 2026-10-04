@@ -57,11 +57,7 @@ class DeviceSession(ZKSS):
         self.connected_flg = self.recvd_ack()
 
         if not self.connected_flg and self.last_reply_code == CMD_ACK_UNAUTH:
-            if not int(comm_key or 0):
-                raise ConnectionError(
-                    'The device requires a communication key. Enter the device '
-                    'communication key (COMM Key / device password) instead of 0, '
-                    'or clear it on the device under Comm. > Security.')
+            # Some terminals require CMD_AUTH even when their configured key is 0.
             self.send_command(CMD_AUTH, scramble_comm_key(comm_key, self.session_id))
             self.recv_reply()
             self.connected_flg = self.recvd_ack()

@@ -13,13 +13,15 @@ class Store(CompanyProfileStore):
         self.db.executescript('''
         CREATE TABLE IF NOT EXISTS accounts(username TEXT PRIMARY KEY, salt TEXT NOT NULL, hash TEXT NOT NULL, role TEXT NOT NULL CHECK(role IN ('admin','manager','reports')), failures INTEGER DEFAULT 0, locked_until TEXT);
         CREATE TABLE IF NOT EXISTS employees(badge TEXT PRIMARY KEY, name TEXT NOT NULL, department TEXT DEFAULT '', active INTEGER DEFAULT 1);
-        CREATE TABLE IF NOT EXISTS devices(id INTEGER PRIMARY KEY, name TEXT NOT NULL, ip TEXT NOT NULL, port INTEGER NOT NULL DEFAULT 4370, udp INTEGER NOT NULL DEFAULT 0, UNIQUE(ip,port));
+        CREATE TABLE IF NOT EXISTS devices(id INTEGER PRIMARY KEY, name TEXT NOT NULL, ip TEXT NOT NULL, port INTEGER NOT NULL DEFAULT 4370, udp INTEGER NOT NULL DEFAULT 0, comm_key INTEGER NOT NULL DEFAULT 0, UNIQUE(ip,port));
         CREATE TABLE IF NOT EXISTS punches(badge TEXT NOT NULL, stamp TEXT NOT NULL, kind TEXT NOT NULL DEFAULT '', source TEXT NOT NULL, UNIQUE(badge,stamp));
         CREATE TABLE IF NOT EXISTS shifts(id INTEGER PRIMARY KEY, name TEXT UNIQUE NOT NULL, start TEXT NOT NULL, end TEXT NOT NULL, grace INTEGER NOT NULL DEFAULT 0, break_mins INTEGER NOT NULL DEFAULT 0, days TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS assignments(id INTEGER PRIMARY KEY, badge TEXT NOT NULL REFERENCES employees(badge), shift_id INTEGER NOT NULL REFERENCES shifts(id), begin TEXT NOT NULL, finish TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS audit(id INTEGER PRIMARY KEY, stamp TEXT NOT NULL, actor TEXT NOT NULL, action TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS company_profile(id INTEGER PRIMARY KEY CHECK(id=1), company_name TEXT NOT NULL, branch TEXT NOT NULL, logo BLOB NOT NULL);
         ''')
+        if 'comm_key' not in {r['name'] for r in self.db.execute('PRAGMA table_info(devices)')}:
+            with self.db:self.db.execute('ALTER TABLE devices ADD COLUMN comm_key INTEGER NOT NULL DEFAULT 0')
         self.actor = None
         try:self._migrate_punches()
         except BaseException:
@@ -101,13 +103,23 @@ class Store(CompanyProfileStore):
             self.db.execute('INSERT INTO employees VALUES(?,?,?,?) ON CONFLICT(badge) DO UPDATE SET name=excluded.name,department=excluded.department,active=excluded.active',(badge.strip(),name.strip(),department,int(active)))
             self.log('Employee saved: '+badge)
 
-    def device(self,name,ip,port,udp):
+    def device(self,name,ip,port,udp,comm_key=None,device_id=None):
         self.require('admin')
         import ipaddress
         ipaddress.ip_address(ip)
         if not name.strip() or not 1 <= int(port) <= 65535 or int(udp) not in (0,1): raise ValueError('Invalid device name, port or UDP setting.')
+        if comm_key is not None and not 0<=int(comm_key)<=0xFFFFFFFF:
+            raise ValueError('The communication key must be a number between 0 and 4294967295.')
         with self.db:
-            self.db.execute('INSERT INTO devices(name,ip,port,udp) VALUES(?,?,?,?) ON CONFLICT(ip,port) DO UPDATE SET name=excluded.name,udp=excluded.udp',(name,ip,int(port),int(udp)))
+            if device_id is not None:
+                changed=self.db.execute('UPDATE devices SET name=?,ip=?,port=?,udp=?,comm_key=COALESCE(?,comm_key) WHERE id=?',
+                    (name,ip,int(port),int(udp),int(comm_key) if comm_key is not None else None,int(device_id)))
+                if changed.rowcount!=1:raise ValueError('That device no longer exists. Refresh the list.')
+            else:
+                self.db.execute('''INSERT INTO devices(name,ip,port,udp,comm_key) VALUES(?,?,?,?,?)
+                    ON CONFLICT(ip,port) DO UPDATE SET name=excluded.name,udp=excluded.udp,
+                    comm_key=CASE WHEN ? IS NULL THEN devices.comm_key ELSE excluded.comm_key END''',
+                    (name,ip,int(port),int(udp),int(comm_key or 0),comm_key))
             self.log('Device saved: '+ip)
 
     def shift(self,name,start,end,grace,break_mins,days):

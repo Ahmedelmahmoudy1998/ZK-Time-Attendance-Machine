@@ -11,6 +11,22 @@ class Tests(unittest.TestCase):
         self.s.db.close()
         for p in self.tmp.iterdir():p.unlink()
         self.tmp.rmdir()
+    def test_device_key_persists_and_edit_keeps_identity(self):
+        self.s.device('Terminal','127.0.0.1',4370,0,123)
+        device=self.s.rows('SELECT * FROM devices')[0]
+        self.s.device('Imported','127.0.0.1',4370,0)
+        self.assertEqual(self.s.rows('SELECT comm_key FROM devices')[0]['comm_key'],123)
+        self.s.device('Moved','127.0.0.2',4370,0,0,device['id'])
+        self.s.close();self.s=Store(self.tmp/'db.sqlite')
+        rows=self.s.rows('SELECT id,ip,comm_key FROM devices')
+        self.assertEqual(rows,[{'id':device['id'],'ip':'127.0.0.2','comm_key':0}])
+
+    def test_invalid_device_key_leaves_saved_value(self):
+        self.s.device('Terminal','127.0.0.1',4370,0,123)
+        for value in (-1,4294967296,'bad'):
+            with self.assertRaises(ValueError):self.s.device('Terminal','127.0.0.1',4370,0,value)
+        self.assertEqual(self.s.rows('SELECT comm_key FROM devices')[0]['comm_key'],123)
+
     def test_roles(self):
         self.s.account('viewer','strong-pass-123','reports'); self.s.login('viewer','strong-pass-123')
         for f in [lambda:self.s.employee('2','Other'),lambda:self.s.device('a','127.0.0.1',4370,0),lambda:self.s.shift('x','08:00','17:00',0,0,'0'),lambda:self.s.ingest([],[],'x'),lambda:self.s.account('x','strong-pass-123','admin',True)]:

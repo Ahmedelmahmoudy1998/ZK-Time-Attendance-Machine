@@ -19,6 +19,17 @@ class MigrationTests(unittest.TestCase):
             ('001','2020-09-07 17:00:00','O','MDB'),
             ('002','2020-09-07 08:00:00','I','MDB')])
         db.commit();db.close();return path
+    def test_device_key_migration_preserves_device(self):
+        path=self.root/'old-device.sqlite'
+        with sqlite3.connect(path) as db:
+            db.execute('CREATE TABLE devices(id INTEGER PRIMARY KEY,name TEXT,ip TEXT,port INTEGER,udp INTEGER,UNIQUE(ip,port))')
+            db.execute("INSERT INTO devices VALUES(9,'Original','127.0.0.1',4370,0)")
+        db.close()
+        for _ in range(2):
+            store=Store(path)
+            self.assertEqual(store.rows('SELECT * FROM devices'),[{'id':9,'name':'Original','ip':'127.0.0.1','port':4370,'udp':0,'comm_key':0}])
+            store.close()
+
     def test_migrate_and_reimport(self):
         path=self.legacy();s=Store(path)
         self.assertEqual(len(s.rows('SELECT * FROM punches')),3)

@@ -21,6 +21,8 @@ AR.update({'Employee':'الموظف','All employees':'كل الموظفين','Ex
 
 AR.update({'Company details':'بيانات الشركة','Company name':'اسم الشركة','Branch':'الفرع','Company logo':'شعار الشركة','Choose logo':'اختيار الشعار','Remove logo':'إزالة الشعار','No company logo':'لم يُحدد شعار للشركة','Company details saved.':'تم حفظ بيانات الشركة.','Saved in the selected database and included in reports.':'تُحفظ في قاعدة البيانات المختارة وتظهر في التقارير.','Choose a PNG or JPEG logo no larger than 5 MB.':'اختر شعار PNG أو JPEG بحجم لا يتجاوز 5 ميجابايت.','Choose a valid PNG or JPEG logo (up to 16 million pixels).':'اختر صورة PNG أو JPEG صالحة لا تتجاوز 16 مليون بكسل.','Company and branch must each be one line of up to 160 characters.':'اسم الشركة والفرع: سطر واحد لكل منهما لا يتجاوز 160 حرفاً.'})
 
+AR.update({'comm_key':'مفتاح الاتصال','Save the device communication key beside its IP address. Downloads use this saved value.':'احفظ مفتاح اتصال الجهاز بجوار عنوان IP. يُستخدم المفتاح المحفوظ عند التنزيل.'})
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__(); self.title('Oasis Attend | Attendance'); self.geometry('1220x780'); self.minsize(980,680)
@@ -347,6 +349,7 @@ class App(tk.Tk):
             filters=ttk.Frame(f);filters.pack(fill='x')
             picker=self.employee_picker(filters)
         if name=='Attendance':queries[name]='SELECT p.badge,COALESCE(e.name,"") AS name,p.stamp,p.kind,p.source FROM punches p LEFT JOIN employees e ON p.badge=e.badge ORDER BY p.stamp DESC LIMIT 10000'
+        if name=='Devices':queries[name]='SELECT id,name,ip,comm_key,port,udp FROM devices ORDER BY id'
         rows=self.store.rows(queries[name]); tree=self.table(f,rows);
         if name in ('Employees','Attendance'):
             def filter_rows(event=None):
@@ -370,11 +373,16 @@ class App(tk.Tk):
             self.button(bar,'Assign shift',lambda:self.form(name,[('Badge','',[r['badge'] for r in self.store.rows('SELECT badge FROM employees')]),('Shift ID','',[r['id'] for r in self.store.rows('SELECT id FROM shifts')]),('From (YYYY-MM-DD)',date.today().isoformat(),None),('To (YYYY-MM-DD)',date.today().replace(month=12,day=31).isoformat(),None)],lambda v:self.saved(name,lambda:self.store.assign(*v.values()))))
             self.button(bar,'Remove selected',lambda:self.saved(name,lambda:self.store.remove_assignment(self.selected(tree)['id'])))
         elif name=='Devices':
-            self.button(bar,'Add / Edit',lambda:self.form(name,[(k,v,None) for k,v in [('Name',''),('IP address','192.168.1.201'),('Port',4370),('UDP (1/0)',0)]],lambda v:self.saved(name,lambda:self.store.device(*v.values()))))
+            def edit_device():
+                selected=self.selected(tree) if tree.selection() else {}
+                self.form(name,[(label,selected.get(key,default),None) for label,key,default in
+                    [('Name','name',''),('IP address','ip','192.168.1.201'),('Communication key (0 if none)','comm_key',0),('Port','port',4370),('UDP (1/0)','udp',0)]],
+                    lambda v:self.saved(name,lambda:self.store.device(v['Name'],v['IP address'],v['Port'],v['UDP (1/0)'],v['Communication key (0 if none)'],selected.get('id'))))
+            self.button(bar,'Add / Edit',edit_device)
             self.button(bar,'Download users + logs',lambda:self.device_download(self.selected(tree)))
             self.button(bar,'Remove device',lambda:self.remove_device(self.selected(tree)))
             ttk.Label(f,text='MB20 · MB1000 · MB2000 · uFace800 | TCP · 4370 (pyzatt)').pack()
-            ttk.Label(f,text=self.tr('If the device has a COMM Key set under Comm. > Security, enter that number when downloading.'),wraplength=800).pack()
+            ttk.Label(f,text=self.tr('Save the device communication key beside its IP address. Downloads use this saved value.'),wraplength=800).pack()
         elif name=='Accounts':
             self.button(bar,'Add / Edit',lambda:self.form(name,[('Username','',None),('Password','',None),('Role','reports',['reports','manager','admin'])],lambda v:self.saved(name,lambda:self.store.account(*v.values()))))
     def saved(self,page,fn): fn(); self.render(page)
@@ -689,12 +697,9 @@ class App(tk.Tk):
 
     def device_download(self,device):
         self.store.require('admin')
-        def start(v):
-            password=int(next(iter(v.values())))
-            def done(data):
-                count=self.store.ingest(*data,source=device['ip']+':'+str(device['port'])); self.home(); messagebox.showinfo('Download',f'{count} new records imported.')
-            self.background(lambda:download(device,password),done)
-        self.form('Devices',[('Communication key (0 if none)','0',None)],start)
+        def done(data):
+            count=self.store.ingest(*data,source=device['ip']+':'+str(device['port'])); self.home(); messagebox.showinfo('Download',f'{count} new records imported.')
+        self.background(lambda:download(device),done)
     def logout(self):
         if self.busy: raise ValueError('Wait for the current operation to finish before logging out.')
         self.login_screen()

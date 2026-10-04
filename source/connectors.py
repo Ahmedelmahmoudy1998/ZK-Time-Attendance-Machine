@@ -53,14 +53,14 @@ try {
             raise RuntimeError('MDB import failed. Install the matching 64-bit Microsoft Access Database Engine, or close ZKTime and retry.\n'+result.stderr[-1800:])
         return json.loads(output.read_text(encoding='utf-8-sig'))
 
-def download(device,password=0):
+def download(device,password=None):
     from device_session import DeviceSession
     from device_time import previous_decoded_time
     from pyzatt.misc import encode_time
     import ipaddress
     if int(device.get('udp',0)):
         raise ValueError('The selected pyzatt connector supports TCP only. UDP download is not available.')
-    key=int(password)
+    key=int(device.get('comm_key',0) if password is None else password)
     if not 0<=key<=0xFFFFFFFF:
         raise ValueError('The communication key must be a number between 0 and 4294967295.')
     ip=ipaddress.IPv4Address(device['ip']);port=int(device['port'])

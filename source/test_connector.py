@@ -7,6 +7,31 @@ from device_session import DeviceSession
 from pyzatt import misc
 
 class ConnectorTests(unittest.TestCase):
+    def test_saved_key_is_used_and_can_be_overridden_with_zero(self):
+        for override,expected in ((None,123),(0,0)):
+            fake=MagicMock();fake.users={};fake.att_log=[]
+            with patch('device_session.DeviceSession',return_value=fake):
+                download({'ip':'127.0.0.1','port':4370,'udp':0,'comm_key':123},override)
+            fake.connect.assert_called_once_with('127.0.0.1',4370,timeout=20,comm_key=expected)
+
+    def test_zero_key_authentication_challenge(self):
+        from device_session import CMD_AUTH,CMD_ACK_UNAUTH,scramble_comm_key
+        from pyzatt.zkmodules import defs
+        session=DeviceSession()
+        replies=iter((CMD_ACK_UNAUTH,defs.CMD_ACK_OK))
+        def reply():session.last_reply_code=next(replies);session.last_session_code=123
+        with patch('device_session.socket.create_connection'),patch.object(session,'send_command') as send,patch.object(session,'recv_reply',side_effect=reply):
+            session.connect('127.0.0.1',4370,comm_key=0)
+            self.assertTrue(session.connected_flg)
+            self.assertEqual(send.call_args_list[1].args,(CMD_AUTH,scramble_comm_key(0,123)))
+
+    def test_rejected_zero_key_still_fails(self):
+        from device_session import CMD_ACK_UNAUTH
+        session=DeviceSession()
+        def reply():session.last_reply_code=CMD_ACK_UNAUTH;session.last_session_code=123
+        with patch('device_session.socket.create_connection'),patch.object(session,'send_command'),patch.object(session,'recv_reply',side_effect=reply):
+            with self.assertRaisesRegex(ConnectionError,'rejected'):session.connect('127.0.0.1',4370,comm_key=0)
+
     def test_mapping_and_cleanup(self):
         fake=MagicMock();fake.users={9:SimpleNamespace(user_id='001',user_name='Example')}
         fake.att_log=[SimpleNamespace(user_id='001',att_time=datetime(2020,1,1,8),ver_state=0)]

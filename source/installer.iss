@@ -1,5 +1,5 @@
 #define MyAppName "Oasis Attend"
-#define MyAppVersion "1.1.4"
+#define MyAppVersion "1.1.5"
 [Setup]
 AppId={{903970FA-DDA6-476D-9B99-B8C3EE283B91}
 AppName={#MyAppName}
