@@ -6,6 +6,7 @@ from datetime import date, timedelta
 from core import Store, monthly, export_csv
 from connectors import read_mdb, download
 from settings import migrate_settings
+from appearance import apply_theme
 from branding import brand_asset
 from company_profile import normalize_logo, MAX_LOGO_BYTES
 from report_exports import asset, PRODUCER, COPYRIGHT, export_pdf, export_excel, export_print_html
@@ -23,6 +24,8 @@ AR.update({'Company details':'بيانات الشركة','Company name':'اسم 
 
 AR.update({'comm_key':'مفتاح الاتصال','Save the device communication key beside its IP address. Downloads use this saved value.':'احفظ مفتاح اتصال الجهاز بجوار عنوان IP. يُستخدم المفتاح المحفوظ عند التنزيل.'})
 
+AR.update({'Appearance':'المظهر','Light':'فاتح','Dark':'داكن','Choose light or dark. Your choice is saved on this PC.':'اختر المظهر الفاتح أو الداكن. يُحفظ اختيارك على هذا الكمبيوتر.'})
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__(); self.title('Oasis Attend | Attendance'); self.geometry('1220x780'); self.minsize(980,680)
@@ -31,10 +34,25 @@ class App(tk.Tk):
         try: self.settings=json.loads(self.config_file.read_text('utf-8'))
         except (OSError,ValueError): self.settings={}
         self.lang=self.settings.get('language','en'); self.store=None; self.busy=False; self.results=queue.Queue()
-        style=ttk.Style(self); style.theme_use('clam'); style.configure('.',font=('Segoe UI',11)); style.configure('Treeview',rowheight=29); style.configure('Treeview.Heading',font=('Segoe UI',10,'bold')); style.configure('TButton',padding=7); style.configure('Title.TLabel',font=('Segoe UI',24,'bold')); style.configure('TNotebook.Tab',padding=(14,8))
+        self.theme_var=tk.StringVar(value=self.settings.get('appearance','light'))
+        apply_theme(self,self.theme_var.get()); self.theme_var.set(self.theme)
         self.iconbitmap(default=str(brand_asset('app-icon.ico')))
         self.protocol('WM_DELETE_WINDOW',self.close)
         self.startup_id=self.after(50,self.open_database); self.after(100,self.poll)
+
+    def change_appearance(self):
+        apply_theme(self,self.theme_var.get())
+        self.settings['appearance']=self.theme
+        self.remember()
+
+    def appearance_picker(self,parent,side=None):
+        box=ttk.Frame(parent,padding=(8,4))
+        box.pack(side=side or 'top',pady=3)
+        ttk.Label(box,text=self.tr('Appearance'),style='Muted.TLabel').pack(side='left',padx=(0,8))
+        for mode,label in (('light','Light'),('dark','Dark')):
+            ttk.Radiobutton(box,text=self.tr(label),variable=self.theme_var,value=mode,
+                            command=lambda:self.guard(self.change_appearance)).pack(side='left',padx=3)
+        return box
 
     def tr(self,s): return AR.get(s,s) if self.lang=='ar' else s
     def clear(self):
@@ -47,7 +65,7 @@ class App(tk.Tk):
         try: return fn()
         except Exception as e: messagebox.showerror('Oasis Attend',self.tr(str(e)),parent=self)
     def button(self,parent,label,fn):
-        b=ttk.Button(parent,text=self.tr(label),command=lambda:self.guard(fn)); b.pack(side='left',padx=4,pady=4); return b
+        b=ttk.Button(parent,text=self.tr(label),style='Primary.TButton' if label in ('Login','Create administrator','Save','Generate','Download users + logs') else 'TButton',command=lambda:self.guard(fn)); b.pack(side='left',padx=4,pady=4); return b
     def form(self,title,fields,callback):
         top=tk.Toplevel(self); top.title(self.tr(title)); top.transient(self); top.grab_set(); box=ttk.Frame(top,padding=22); box.pack(fill='both',expand=True); values={}
         for i,(label,value,choices) in enumerate(fields):
@@ -119,6 +137,7 @@ class App(tk.Tk):
         ttk.Label(frame,text='Oasis Attend',style='Title.TLabel').pack(pady=2)
         ttk.Label(frame,text='Attendance & workforce  |  الحضور وإدارة الموظفين').pack(pady=2)
         self.company_header(frame)
+        self.appearance_picker(frame)
         language_bar=ttk.Frame(frame);language_bar.pack();self.button(language_bar,'العربية / English',self.toggle_language)
         initial=not self.store.rows('SELECT username FROM accounts')
         ttk.Label(frame,text=self.tr('Create administrator' if initial else 'Login')).pack(pady=2)
@@ -149,7 +168,8 @@ class App(tk.Tk):
         tree=ttk.Treeview(wrap,columns=cols,show='headings',selectmode='browse'); vs=ttk.Scrollbar(wrap,orient='vertical',command=tree.yview); hs=ttk.Scrollbar(wrap,orient='horizontal',command=tree.xview); tree.configure(yscrollcommand=vs.set,xscrollcommand=hs.set)
         tree.grid(row=0,column=0,sticky='nsew'); vs.grid(row=0,column=1,sticky='ns'); hs.grid(row=1,column=0,sticky='ew'); wrap.rowconfigure(0,weight=1); wrap.columnconfigure(0,weight=1)
         for c in cols: tree.heading(c,text=self.tr(c)); tree.column(c,width=155,minwidth=90,anchor='e' if self.lang=='ar' else 'w')
-        for i,r in enumerate(rows): tree.insert('', 'end',iid=str(i),values=[self.tr(str(r.get(c,''))) for c in cols])
+        tree.tag_configure('stripe',background=self.colors['stripe'])
+        for i,r in enumerate(rows): tree.insert('', 'end',iid=str(i),values=[self.tr(str(r.get(c,''))) for c in cols],tags=('stripe',) if i%2 else ())
         tree.records=rows; return tree
 
     def selected(self,tree):
@@ -181,6 +201,7 @@ class App(tk.Tk):
         bar=ttk.Frame(self,padding=(18,12)); bar.pack(fill='x')
         ttk.Label(bar,text='Oasis Attend',style='Title.TLabel').pack(side='left',padx=15)
         ttk.Label(bar,text=f"{self.store.actor['username']} · {self.store.actor['role']}").pack(side='left',padx=18)
+        self.appearance_picker(bar,side='right')
         self.button(bar,'العربية / English',self.toggle_language); self.button(bar,'Logout',self.logout)
         self.company_header(self)
         self.status=tk.StringVar(value=self.tr('Working…' if self.busy else 'Ready')); ttk.Label(self,textvariable=self.status,padding=8).pack(side='bottom',fill='x')
@@ -213,9 +234,9 @@ class App(tk.Tk):
         for title,table in [('Employees','employees'),('Attendance','punches'),
                             ('Shifts','shifts'),('Devices','devices')]:
             n=self.store.rows('SELECT COUNT(*) AS n FROM '+table)[0]['n']
-            cell=ttk.Frame(tiles,padding=(20,6)); cell.pack(side='left')
-            ttk.Label(cell,text=str(n),font=('Segoe UI',26,'bold')).pack()
-            ttk.Label(cell,text=self.tr(title)).pack()
+            cell=ttk.Frame(tiles,padding=(28,18),style='Card.TFrame'); cell.pack(side='left',padx=6)
+            ttk.Label(cell,text=str(n),style='Metric.Card.TLabel').pack()
+            ttk.Label(cell,text=self.tr(title),style='Card.TLabel').pack()
 
         today=date.today().isoformat()
         try:
@@ -254,7 +275,7 @@ class App(tk.Tk):
         block=ttk.Frame(parent); block.pack()
         size=250; pad=10
         canvas=tk.Canvas(block,width=size,height=size,highlightthickness=0,
-                         background=self.cget('background'))
+                         background=self.colors['surface'])
         canvas.pack(side='left',padx=(0,22))
         total=sum(counts.values())
         order=[(name,colour) for name,colour in self.STATUS_COLORS if counts.get(name)]
@@ -276,7 +297,7 @@ class App(tk.Tk):
             n=counts[name]; share=round(100*n/total)
             row=ttk.Frame(legend); row.pack(anchor='w',pady=3)
             swatch=tk.Canvas(row,width=14,height=14,highlightthickness=0,
-                             background=self.cget('background'))
+                             background=self.colors['surface'])
             swatch.create_rectangle(0,0,14,14,fill=colour,outline=colour)
             swatch.pack(side='left',padx=(0,8))
             ttk.Label(row,text=f'{self.tr(name)}   {n}  ({share}%)').pack(side='left')
@@ -340,6 +361,9 @@ class App(tk.Tk):
         bar=ttk.Frame(f); bar.pack(fill='x')
         if name=='Settings':
             self.store.require('admin')
+            appearance=ttk.LabelFrame(f,text=self.tr('Appearance'),padding=10); appearance.pack(fill='x',pady=8)
+            self.appearance_picker(appearance)
+            ttk.Label(appearance,text=self.tr('Choose light or dark. Your choice is saved on this PC.'),style='Muted.TLabel').pack()
             self.company_settings(f)
             ttk.Label(f,text=self.store.path,wraplength=800).pack(pady=16)
             ttk.Label(f,text=self.tr('Database selection is remembered automatically.')).pack(pady=8)
@@ -614,7 +638,7 @@ class App(tk.Tk):
             self.report_data=body+[self.totals_row(body)]
             tree=self.table(result,self.report_data)
             tree.item(str(len(self.report_data)-1),tags=('total',))
-            tree.tag_configure('total',font=('Segoe UI',10,'bold'),background='#EDF1F8')
+            tree.tag_configure('total',font=('Segoe UI',10,'bold'),background=self.colors['hover'],foreground=self.colors['text'])
             strip=ttk.Frame(result,padding=(0,8)); strip.pack(fill='x')
             for label,value in summary:
                 cell=ttk.Frame(strip,padding=(0,0,22,0)); cell.pack(side='left')
@@ -735,6 +759,18 @@ def self_test(folder):
             for child in widget.winfo_children():yield from walk(child)
         for label in ('Company name','Branch','Choose logo','Remove logo'):
             assert any(w.cget('text')==app.tr(label) for w in walk(app.pages['Settings']) if 'text' in w.keys())
+    # Switching appearance must preserve an open page, unsaved entry and table selection.
+    for language in ('en','ar'):
+        app.lang=language;app.home()
+        page=app.pages['Settings'];app.notebook.select(page)
+        pending=ttk.Entry(page);pending.insert(0,'Unsaved company edit');pending.pack()
+        tree=app.table(page,[{'badge':'001'},{'badge':'002'}]);tree.selection_set('1')
+        for mode in ('dark','light'):
+            app.theme_var.set(mode);app.change_appearance();app.update_idletasks()
+            assert app.notebook.select()==str(page)
+            assert pending.get()=='Unsaved company edit' and tree.selection()==('1',)
+            assert json.loads(app.config_file.read_text('utf-8'))['appearance']==mode
+            assert ttk.Style(app).lookup('TEntry','foreground')==app.colors['text']
     app.store.account('smoke-reader','smoke-only-password','reports')
     app.store.login('smoke-reader','smoke-only-password');app.home();app.update_idletasks()
     assert list(app.pages)==['Dashboard','Reports']
@@ -747,7 +783,7 @@ def self_test(folder):
     export_excel(folder/'check.xls',sample,company=company)
     export_excel(folder/'check.xlsx',sample,company=company)
     export_print_html(folder/'check.html',sample,company=company)
-    app.close();(folder/'self-test.json').write_text(json.dumps({'ok':True,'languages':['en','ar'],'device_connector_import':True,'reader_tabs':2,'admin_tabs':10}))
+    app.close();(folder/'self-test.json').write_text(json.dumps({'ok':True,'languages':['en','ar'],'device_connector_import':True,'reader_tabs':2,'admin_tabs':10,'appearance':['light','dark'],'theme_preserves_edits':True}))
 
 if __name__=='__main__':
     if len(sys.argv)==3 and sys.argv[1]=='--self-test':

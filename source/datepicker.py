@@ -43,16 +43,8 @@ def preset_range(name, low=None, high=None, today=None):
 
 
 def install_styles(widget):
-    style = ttk.Style(widget)
-    try:
-        style.configure('Day.TButton', padding=2, width=4)
-        style.configure('DaySelected.TButton', padding=2, width=4,
-                        background='#203E84', foreground='#FFFFFF')
-        style.map('DaySelected.TButton', background=[('active', '#2F58AE')])
-        style.configure('DayToday.TButton', padding=2, width=4, foreground='#203E84')
-        style.configure('DayOther.TButton', padding=2, width=4, foreground='#8A93A5')
-    except tk.TclError:
-        pass
+    from appearance import calendar_styles
+    calendar_styles(widget)
 
 
 class DateDialog(tk.Toplevel):
@@ -217,7 +209,7 @@ class DateRange(ttk.Frame):
                        command=lambda n=name: self.use_preset(n)).pack(side='left', padx=1)
 
         self.error = tk.StringVar()
-        ttk.Label(self, textvariable=self.error, foreground='#B3261E',
+        ttk.Label(self, textvariable=self.error, style='Error.TLabel',
                   wraplength=240).pack(side='left', padx=10)
         self.bind('<Destroy>', self._cancel_timer)
 
