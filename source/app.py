@@ -13,6 +13,7 @@ from report_exports import asset, PRODUCER, COPYRIGHT, export_pdf, export_excel,
 from datepicker import DateRange, preset_range
 from biotime_ui import open_biotime, TRANSLATIONS as BIOTIME_TRANSLATIONS
 from device_session import DirectConnectionRejected
+from adms_ui import open_adms, stop_receiver, TRANSLATIONS as ADMS_TRANSLATIONS
 
 AR={'Oasis Attend':'حضور أوايسس','Dashboard':'الرئيسية','Employees':'الموظفون','Attendance':'سجل الحضور','Shifts':'الورديات','Assignments':'تعيين الورديات','Reports':'التقارير','Devices':'الأجهزة','Accounts':'الحسابات','Settings':'الإعدادات','Audit':'سجل العمليات','Logout':'تسجيل الخروج','Save':'حفظ','Cancel':'إلغاء','Add / Edit':'إضافة / تعديل','Refresh':'تحديث','Export CSV':'تصدير CSV','Download users + logs':'تنزيل المستخدمين والحضور','Import ZKTime MDB':'استيراد قاعدة ZKTime','Generate':'إنشاء التقرير','Daily':'يومي','Monthly':'شهري','Period':'فترة محددة','Remove selected':'حذف التعيين المحدد','Create shift':'إنشاء وردية','Assign shift':'تعيين وردية','Backup database':'نسخ احتياطي','Choose database':'اختيار قاعدة البيانات','Login':'دخول','Username':'اسم المستخدم','Password':'كلمة المرور','Create administrator':'إنشاء حساب المدير','Database':'قاعدة البيانات','Role':'الصلاحية','Name':'الاسم','Badge':'رقم الموظف','Department':'القسم','Active (1/0)':'نشط (1/0)','Start (HH:MM)':'البداية (ساعة:دقيقة)','End (HH:MM)':'النهاية (ساعة:دقيقة)','Grace minutes':'دقائق السماح','Break minutes':'دقائق الاستراحة','Weekdays (Mon=0, Sun=6)':'أيام الأسبوع (الاثنين=0، الأحد=6)','From (YYYY-MM-DD)':'من (سنة-شهر-يوم)','To (YYYY-MM-DD)':'إلى (سنة-شهر-يوم)','Shift ID':'رقم الوردية','IP address':'عنوان IP','Port':'المنفذ','UDP (1/0)':'UDP (1/0)','Communication key (0 if none)':'مفتاح الاتصال (0 إن لم يوجد)','All employees: leave badge empty':'كل الموظفين: اترك الرقم فارغاً','Ready':'جاهز','Working…':'جارٍ العمل…','Present':'حاضر','Absent':'غائب','Late':'متأخر','Missing punch':'بصمة ناقصة','Off / Unscheduled':'راحة / غير مجدول','date':'التاريخ','badge':'رقم الموظف','name':'الاسم','department':'القسم','shift':'الوردية','first':'أول بصمة','last':'آخر بصمة','punches':'البصمات','worked_minutes':'دقائق العمل','late_minutes':'دقائق التأخير','early_minutes':'دقائق الخروج المبكر','status':'الحالة','active':'نشط','stamp':'الوقت','kind':'النوع','source':'المصدر','id':'الرقم','start':'البداية','end':'النهاية','grace':'السماح','break_mins':'الاستراحة','days':'الأيام','begin':'من','finish':'إلى','shift_id':'رقم الوردية','username':'المستخدم','role':'الصلاحية','actor':'المستخدم','action':'العملية','present_days':'أيام الحضور','absent_days':'أيام الغياب','missing_punch_days':'أيام البصمة الناقصة'}
 
@@ -29,6 +30,7 @@ AR.update({'comm_key':'مفتاح الاتصال','Save the device communication
 AR.update({'Appearance':'المظهر','Light':'فاتح','Dark':'داكن','Choose light or dark. Your choice is saved on this PC.':'اختر المظهر الفاتح أو الداكن. يُحفظ اختيارك على هذا الكمبيوتر.'})
 
 AR.update(BIOTIME_TRANSLATIONS)
+AR.update(ADMS_TRANSLATIONS)
 
 class App(tk.Tk):
     def __init__(self):
@@ -98,6 +100,7 @@ class App(tk.Tk):
         try: new=Store(path)
         except Exception as e:
             self.database_unavailable(str(e)); return
+        stop_receiver(self)
         if self.store: self.store.db.close()
         self.store=new; self.settings['database']=path; self.remember(); self.login_screen()
 
@@ -129,6 +132,7 @@ class App(tk.Tk):
         self.home() if self.store and self.store.actor else self.login_screen()
 
     def login_screen(self):
+        stop_receiver(self)
         self.clear(); self.store.actor=None
         # The login block is the whole screen here, so the window shrinks to it
         # instead of framing it with empty space. home() restores the full size.
@@ -410,6 +414,8 @@ class App(tk.Tk):
             self.button(bar,'Download users + logs',lambda:self.device_download(self.selected(tree)))
             self.button(bar,'Remove device',lambda:self.remove_device(self.selected(tree)))
             self.button(bar,'Import from BioTime',lambda:open_biotime(self))
+            adms_bar=ttk.Frame(f);adms_bar.pack()
+            self.button(adms_bar,'Receive from device (ADMS)',lambda:open_adms(self,self.selected(tree) if tree.selection() else {}))
             ttk.Label(f,text='MB20 · MB1000 · MB2000 · uFace800 | TCP · 4370 (pyzatt)').pack()
             ttk.Label(f,text=self.tr('Save the device communication key beside its IP address. Downloads use this saved value.'),wraplength=800).pack()
         elif name=='Accounts':
@@ -703,8 +709,8 @@ class App(tk.Tk):
     def operation_error(self,error):
         if isinstance(error,DirectConnectionRejected) and error.reply_code==6001:
             if messagebox.askyesno('Oasis Attend',self.tr(
-                    'The device rejected the direct download (6001). If it is connected to BioTime, import its attendance through BioTime. Open Import from BioTime now?'),parent=self):
-                open_biotime(self)
+                    'The device rejected the direct download (6001). Use Receive from device (ADMS) to receive attendance without BioTime. Open receiver settings?'),parent=self):
+                open_adms(self)
             return
         messagebox.showerror('Oasis Attend',self.tr(str(error)),parent=self)
     def import_mdb(self):
@@ -741,6 +747,7 @@ class App(tk.Tk):
         self.login_screen()
     def close(self):
         if self.busy: messagebox.showinfo('Oasis Attend','Wait for the current download/import to finish.'); return
+        stop_receiver(self)
         if self.store:self.store.db.close()
         self.destroy()
 
@@ -787,6 +794,10 @@ def self_test(folder):
             assert any(w.cget('text')==app.tr('Read attendance') for w in walk(dialog) if 'text' in w.keys())
             password_fields=[w for w in walk(dialog) if isinstance(w,ttk.Entry) and w.cget('show')=='•']
             assert len(password_fields)==1 and password_fields[0].get()==''
+            assert dialog.winfo_reqwidth()<app.winfo_screenwidth()
+            dialog.destroy()
+            dialog=open_adms(app);app.update_idletasks()
+            assert any(w.cget('text')==app.tr('Start receiver') for w in walk(dialog) if 'text' in w.keys())
             assert dialog.winfo_reqwidth()<app.winfo_screenwidth()
             dialog.destroy()
     app.store.account('smoke-reader','smoke-only-password','reports')

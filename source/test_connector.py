@@ -18,16 +18,16 @@ class ConnectorTests(unittest.TestCase):
             self.assertFalse(session.connected_flg)
             self.assertEqual(send.call_count,1)
 
-    def test_reply_6001_offers_biotime_without_claiming_success(self):
+    def test_reply_6001_offers_adms_without_claiming_success(self):
         from app import App
         from device_session import DirectConnectionRejected
         app=SimpleNamespace(tr=lambda value:value)
         for accept in (False,True):
-            with patch('app.messagebox.askyesno',return_value=accept),patch('app.open_biotime') as open_form,patch('app.messagebox.showerror') as error:
+            with patch('app.messagebox.askyesno',return_value=accept),patch('app.open_adms') as open_form,patch('app.messagebox.showerror') as error:
                 App.operation_error(app,DirectConnectionRejected(6001))
                 self.assertEqual(open_form.call_count,int(accept))
                 error.assert_not_called()
-        with patch('app.messagebox.askyesno') as prompt,patch('app.open_biotime') as open_form,patch('app.messagebox.showerror') as error:
+        with patch('app.messagebox.askyesno') as prompt,patch('app.open_adms') as open_form,patch('app.messagebox.showerror') as error:
             App.operation_error(app,ConnectionError('A different error'))
             error.assert_called_once();prompt.assert_not_called();open_form.assert_not_called()
 

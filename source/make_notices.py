@@ -26,7 +26,7 @@ def main():
     (root/'THIRD-PARTY-NOTICES.txt').write_text('\n'.join(sections),encoding='utf-8')
     portable=root/'portable/Oasis Attend'
     if portable.is_dir():
-        for name in ('LICENSE.txt','THIRD-PARTY-NOTICES.txt','README.md','REPLACING-BIDI.md','VALIDATION.md'):
+        for name in ('LICENSE.txt','THIRD-PARTY-NOTICES.txt','README.md','REPLACING-BIDI.md','VALIDATION.md','PASSWORD-UPDATE.md','COMPANY-SETTINGS.md','BIOTIME.md','ADMS.md'):
             shutil.copy2(root/name,portable/name)
         shutil.copytree(root/'third-party-sources',portable/'third-party-sources',dirs_exist_ok=True)
 
