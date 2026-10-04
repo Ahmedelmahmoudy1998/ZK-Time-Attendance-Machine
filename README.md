@@ -4,6 +4,8 @@ Owner: **Oasis Digital Solutions**. Arabic product name: **حضور أوايسس
 
 ## Run or install
 
+Version 1.1.7 adds coordinated **Light / Dark** appearance options on the login screen, in the app header, and under Settings. Light mode uses white panels with navy and gold accents; dark mode uses charcoal panels with gold accents. The choice is saved on this PC and applies immediately without losing open forms or selected filters. Tables, calendars and dropdowns follow the chosen appearance; exported reports retain their print-friendly colors.
+
 Extract the portable folder and run `portable/Oasis Attend/Oasis Attend.exe`. Keep `_internal` and the license/source notices alongside the executable. Python is included. Windows 10/11 x64 is the target. Alternatively, use `installer/Oasis Attend Setup.exe`; the installer places the same folder layout under the current Windows user's Programs directory and creates shortcuts. Binaries are unsigned.
 
 First run automatically copies `%LOCALAPPDATA%\ZKDesk\settings.json` to `%LOCALAPPDATA%\Oasis Attend\settings.json` when the new file does not exist. The old settings and chosen database remain in place. An existing new settings file always wins. Your database selection, language and accounts are retained. If a saved database is unavailable, its path is kept and a recovery screen is shown. A new installation asks for a `.sqlite` database and an administrator password of at least eight characters (no required uppercase letters, numbers, or symbols).
